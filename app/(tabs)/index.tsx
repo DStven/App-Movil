@@ -1,98 +1,192 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useRef, useState } from 'react';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [petName, setPetName] = useState('');
+  const [userName, setUserName] = useState('');
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const userInputRef = useRef<TextInput>(null);
+
+  const isPetValid = petName.trim().length > 0;
+  const isUserValid = userName.trim().length > 0;
+  const isFormValid = isPetValid && isUserValid;
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.content}>
+
+          {/* Logo */}
+          <View style={styles.logo} />
+
+          {/* Títulos */}
+          <Text style={styles.title}>¡Empecemos!</Text>
+          <Text style={styles.subtitle}>
+            Ponle nombre a tu mascota y dinos cómo te llamas
+          </Text>
+
+          {/* Mascota */}
+          <Text style={styles.label}>Nombre de tu mascota</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej: Rocky"
+              placeholderTextColor="#999"
+              value={petName}
+              onChangeText={setPetName}
+              returnKeyType="next"
+            />
+            <TouchableOpacity
+              style={[
+                styles.inputButton,
+                !isPetValid && styles.buttonDisabled,
+              ]}
+              disabled={!isPetValid}
+              onPress={() => userInputRef.current?.focus()}
+            >
+              <Ionicons name="arrow-forward" size={22} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Usuario */}
+          <Text style={styles.label}>Tu nombre</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              ref={userInputRef}
+              style={styles.input}
+              placeholder="Ej: Steven"
+              placeholderTextColor="#999"
+              value={userName}
+              onChangeText={setUserName}
+              returnKeyType="done"
+            />
+            <TouchableOpacity
+              style={[
+                styles.inputButton,
+                !isUserValid && styles.buttonDisabled,
+              ]}
+              disabled={!isUserValid}
+              onPress={() => Keyboard.dismiss()}
+            >
+              <Ionicons name="checkmark" size={22} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Botón continuar */}
+          <TouchableOpacity
+            style={[
+              styles.mainButton,
+              !isFormValid && styles.mainButtonDisabled,
+            ]}
+            disabled={!isFormValid}
+          >
+            <Text style={styles.mainButtonText}>Continuar</Text>
+          </TouchableOpacity>
+
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    backgroundColor: '#ffffff',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  content: {
+    width: '100%',
+    maxWidth: 400,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    marginTop: 40,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
+  logo: {
+    width: 140,
+    height: 140,
+    backgroundColor: '#e0e0e0',
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#777',
+    textAlign: 'center',
+    marginBottom: 30,
+    marginTop: 6,
+  },
+  label: {
+    fontSize: 13,
+    color: '#999',
+    marginBottom: 6,
+    marginLeft: 4,
+  },
+  inputWrapper: {
+    position: 'relative',
+    marginBottom: 20,
+  },
+  input: {
+    width: '100%',
+    height: 52,
+    borderWidth: 1.5,
+    borderColor: '#ff3b3b',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingRight: 60,
+    fontSize: 14,
+  },
+  inputButton: {
     position: 'absolute',
+    right: 6,
+    top: 6,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#ff3b3b',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.4,
+  },
+  mainButton: {
+    marginTop: 10,
+    backgroundColor: '#ff3b3b',
+    height: 56,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mainButtonDisabled: {
+    opacity: 0.4,
+  },
+  mainButtonText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: 'bold',
   },
 });
