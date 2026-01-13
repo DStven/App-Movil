@@ -1,49 +1,95 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+
+
 import { useRef, useState } from 'react';
 import {
+  Animated,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 
-export default function HomeScreen() {
+export default function OnboardingScreen() {
+  // 🧭 Router
+  const router = useRouter();
+
   const [petName, setPetName] = useState('');
   const [userName, setUserName] = useState('');
 
   const userInputRef = useRef<TextInput>(null);
 
+  // 🎞 Animaciones inputs
+  const petAnim = useRef(new Animated.Value(1)).current;
+  const userAnim = useRef(new Animated.Value(1)).current;
+
+  // 🎞 Animación botón
+  const buttonAnim = useRef(new Animated.Value(1)).current;
+
+  const focusInput = (anim: Animated.Value) => {
+    Animated.spring(anim, {
+      toValue: 1.05,
+      friction: 7,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const blurInput = (anim: Animated.Value) => {
+    Animated.spring(anim, {
+      toValue: 1,
+      friction: 7,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const pressInButton = () => {
+    Animated.spring(buttonAnim, {
+      toValue: 0.96,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const pressOutButton = () => {
+    Animated.spring(buttonAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
   const isPetValid = petName.trim().length > 0;
   const isUserValid = userName.trim().length > 0;
   const isFormValid = isPetValid && isUserValid;
 
+  const handleContinue = () => {
+    if (!isFormValid) return;
+    router.replace('/choose-pet');
+  };
+
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.content}>
+      <View style={styles.container}>
 
-          {/* Logo */}
-          <View style={styles.logo} />
+        {/* Logo */}
+        <View style={styles.logo} />
 
-          {/* Títulos */}
-          <Text style={styles.title}>¡Empecemos!</Text>
-          <Text style={styles.subtitle}>
-            Ponle nombre a tu mascota y dinos cómo te llamas
-          </Text>
+        {/* Títulos */}
+        <Text style={styles.title}>¡Empecemos!</Text>
+        <Text style={styles.subtitle}>
+          Ponle nombre a tu mascota y dinos cómo te llamas
+        </Text>
 
-          {/* Mascota */}
-          <Text style={styles.label}>Nombre de tu mascota</Text>
+        {/* Mascota */}
+        <Text style={styles.label}>Nombre de tu mascota</Text>
+        <Animated.View style={{ transform: [{ scale: petAnim }] }}>
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.input}
@@ -52,6 +98,10 @@ export default function HomeScreen() {
               value={petName}
               onChangeText={setPetName}
               returnKeyType="next"
+              blurOnSubmit={false}
+              onFocus={() => focusInput(petAnim)}
+              onBlur={() => blurInput(petAnim)}
+              onSubmitEditing={() => userInputRef.current?.focus()}
             />
             <TouchableOpacity
               style={[
@@ -64,9 +114,11 @@ export default function HomeScreen() {
               <Ionicons name="arrow-forward" size={22} color="#fff" />
             </TouchableOpacity>
           </View>
+        </Animated.View>
 
-          {/* Usuario */}
-          <Text style={styles.label}>Tu nombre</Text>
+        {/* Usuario */}
+        <Text style={styles.label}>Tu nombre</Text>
+        <Animated.View style={{ transform: [{ scale: userAnim }] }}>
           <View style={styles.inputWrapper}>
             <TextInput
               ref={userInputRef}
@@ -76,6 +128,9 @@ export default function HomeScreen() {
               value={userName}
               onChangeText={setUserName}
               returnKeyType="done"
+              onFocus={() => focusInput(userAnim)}
+              onBlur={() => blurInput(userAnim)}
+              onSubmitEditing={Keyboard.dismiss}
             />
             <TouchableOpacity
               style={[
@@ -83,42 +138,49 @@ export default function HomeScreen() {
                 !isUserValid && styles.buttonDisabled,
               ]}
               disabled={!isUserValid}
-              onPress={() => Keyboard.dismiss()}
+              onPress={Keyboard.dismiss}
             >
               <Ionicons name="checkmark" size={22} color="#fff" />
             </TouchableOpacity>
           </View>
+        </Animated.View>
 
-          {/* Botón continuar */}
-          <TouchableOpacity
+        {/* Botón continuar */}
+        <TouchableWithoutFeedback
+          disabled={!isFormValid}
+          onPressIn={pressInButton}
+          onPressOut={pressOutButton}
+          onPress={handleContinue}
+        >
+          <Animated.View
             style={[
               styles.mainButton,
               !isFormValid && styles.mainButtonDisabled,
+              { transform: [{ scale: buttonAnim }] },
             ]}
-            disabled={!isFormValid}
           >
             <Text style={styles.mainButtonText}>Continuar</Text>
-          </TouchableOpacity>
+          </Animated.View>
+        </TouchableWithoutFeedback>
 
-        </View>
-      </ScrollView>
+      </View>
     </KeyboardAvoidingView>
   );
 }
 
+/* ======================
+   ESTILOS
+   ====================== */
+
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
+  root: {
+    flex: 1,
+    backgroundColor: '#fff',
   },
-  content: {
-    width: '100%',
-    maxWidth: 400,
+  container: {
+    flex: 1,
     paddingHorizontal: 24,
-    paddingBottom: 40,
-    marginTop: 40,
+    paddingTop: 80,
   },
   logo: {
     width: 140,
@@ -126,6 +188,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e0e0e0',
     alignSelf: 'center',
     marginBottom: 20,
+    borderRadius: 24,
   },
   title: {
     fontSize: 26,
@@ -158,6 +221,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingRight: 60,
     fontSize: 14,
+    backgroundColor: '#fff',
   },
   inputButton: {
     position: 'absolute',
