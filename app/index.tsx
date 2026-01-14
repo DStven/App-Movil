@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-
-
 import { useRef, useState } from 'react';
 import {
   Animated,
@@ -66,8 +65,15 @@ export default function OnboardingScreen() {
   const isUserValid = userName.trim().length > 0;
   const isFormValid = isPetValid && isUserValid;
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!isFormValid) return;
+
+    // 💾 Guardar datos iniciales
+    await AsyncStorage.setItem('petName', petName);
+    await AsyncStorage.setItem('userName', userName);
+    await AsyncStorage.setItem('hasOnboarded', 'true');
+
+    // ➡️ Ir a elegir mascota
     router.replace('/choose-pet');
   };
 
@@ -170,7 +176,7 @@ export default function OnboardingScreen() {
 
 /* ======================
    ESTILOS
-   ====================== */
+====================== */
 
 const styles = StyleSheet.create({
   root: {
