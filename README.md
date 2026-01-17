@@ -73,8 +73,7 @@ rutina_App/
 │   ├── streak.ts            # Sistema de rachas
 │   └── userProgress.ts      # Progreso y XP del usuario
 ├── utils/                   # Utilidades
-│   ├── backup.ts            # Funciones de backup/restore
-│   └── notifications.ts     # Sistema de notificaciones
+│   └── backup.ts            # Funciones de backup/restore
 ├── contexts/                # Contextos de React
 │   └── ThemeContext.tsx     # Contexto de tema (claro/oscuro)
 └── constants/               # Constantes
@@ -96,7 +95,6 @@ npm start
 - **React Native** - Framework principal
 - **Expo Router** - Navegación entre pantallas
 - **AsyncStorage** - Almacenamiento local persistente
-- **Expo Notifications** - Sistema de notificaciones
 - **TypeScript** - Tipado estático
 
 ## 🎨 Características de Diseño
@@ -108,7 +106,6 @@ npm start
 
 ## 📝 Notas de Desarrollo
 
-- Las notificaciones requieren un desarrollo build (no funcionan en Expo Go)
 - Los datos se guardan localmente usando AsyncStorage
 - El sistema de rachas se resetea automáticamente si no completas todas las rutinas del día
 

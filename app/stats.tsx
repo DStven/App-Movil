@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
   ScrollView,
@@ -10,9 +10,9 @@ import {
   View,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { getWeeklyStats, getMonthlyStats } from './storage/routineHistory';
-import { getCurrentStreak, getBestStreak } from './storage/streak';
-import { getXP, getLevel } from './storage/userProgress';
+import { getMonthlyStats, getWeeklyStats } from './storage/routineHistory';
+import { getBestStreak, getCurrentStreak } from './storage/streak';
+import { getLevel, getXP } from './storage/userProgress';
 
 export default function StatsScreen() {
   const { colors } = useTheme();
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 24,
     paddingBottom: 20,
   },
   backButton: {

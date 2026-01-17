@@ -5,11 +5,13 @@ import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
     ScrollView,
+    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getBestStreak, getCurrentStreak } from '../storage/streak';
 import { getLevel, getProgress, getXP } from '../storage/userProgress';
@@ -74,7 +76,8 @@ export default function Profile() {
   const dynamicStyles = getDynamicStyles(colors);
 
   return (
-    <View style={[styles.container, dynamicStyles.container]}>
+    <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
+      <StatusBar barStyle={colors.background === '#ffffff' ? 'dark-content' : 'light-content'} />
       {/* Header estático */}
       <View style={[styles.staticHeader, dynamicStyles.staticHeader]}>
         <Text style={[styles.title, dynamicStyles.title]}>Perfil</Text>
@@ -254,7 +257,7 @@ export default function Profile() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -339,7 +342,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 24,
     paddingBottom: 20,
     borderBottomWidth: 1,
   },

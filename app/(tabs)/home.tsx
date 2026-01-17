@@ -7,11 +7,13 @@ import {
   Animated,
   Easing,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { checkAchievements } from '../storage/achievements';
 import { addRoutineHistory } from '../storage/routineHistory';
@@ -336,7 +338,8 @@ export default function HomeScreen() {
   // Si no hay rutinas, mostrar mensaje para crear una
   if (!routine && allRoutines.length === 0) {
     return (
-      <View style={[styles.container, dynamicStyles.container]}>
+      <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
+        <StatusBar barStyle={colors.background === '#ffffff' ? 'dark-content' : 'light-content'} />
         <View style={styles.emptyContainer}>
           <Text style={[styles.emptyTitle, dynamicStyles.emptyTitle]}>No tienes rutinas</Text>
           <Text style={[styles.emptyText, dynamicStyles.emptyText]}>
@@ -349,7 +352,7 @@ export default function HomeScreen() {
             <Text style={styles.createButtonText}>Crear rutina</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -358,7 +361,8 @@ export default function HomeScreen() {
     const hasIncompleteRoutines = allRoutines.some((r: Routine) => !r.completed);
     
     return (
-      <View style={[styles.container, dynamicStyles.container]}>
+      <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
+        <StatusBar barStyle={colors.background === '#ffffff' ? 'dark-content' : 'light-content'} />
         <View style={styles.emptyContainer}>
           <Text style={[styles.emptyTitle, dynamicStyles.emptyTitle]}>
             {hasIncompleteRoutines 
@@ -379,7 +383,7 @@ export default function HomeScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -395,7 +399,8 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={[styles.container, dynamicStyles.container]}>
+    <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
+      <StatusBar barStyle={colors.background === '#ffffff' ? 'dark-content' : 'light-content'} />
       {/* Header minimalista */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
@@ -508,7 +513,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -571,7 +576,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 24,
     paddingBottom: 24,
   },
   headerTop: {
