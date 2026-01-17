@@ -44,9 +44,6 @@ Una aplicación moderna y elegante para gestionar tus rutinas diarias, con siste
 - Restaurar desde archivos JSON
 - Exportar datos para análisis externo
 
-### 🔔 Notificaciones (Requerirá build de desarrollo)
-- Recordatorios diarios de rutinas
-- Alertas para mantener tu racha activa
 
 ## 📁 Estructura del Proyecto
 
@@ -125,4 +122,3 @@ npm start
 
 ---
 
-Desarrollado con ❤️ usando React Native y Expo
