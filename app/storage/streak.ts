@@ -113,3 +113,7 @@ export async function getBestStreak(): Promise<number> {
   return value ? parseInt(value, 10) : 0;
 }
 
+// Export default para evitar que Expo Router lo trate como ruta
+export default function StreakStorage() {
+  return null;
+}

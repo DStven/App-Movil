@@ -21,3 +21,8 @@ export function getLevel(xp: number) {
 export function getProgress(xp: number) {
   return xp % 100;
 }
+
+// Export default para evitar que Expo Router lo trate como ruta
+export default function UserProgressStorage() {
+  return null;
+}

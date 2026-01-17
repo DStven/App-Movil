@@ -12,8 +12,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { checkAndResetStreakIfNeeded, updateStreak } from '../../storage/streak';
-import { addXP } from '../../storage/userProgress';
+import { useTheme } from '../../contexts/ThemeContext';
+import { checkAchievements } from '../storage/achievements';
+import { addRoutineHistory } from '../storage/routineHistory';
+import { checkAndResetStreakIfNeeded, getCurrentStreak, updateStreak } from '../storage/streak';
+import { addXP, getLevel, getXP } from '../storage/userProgress';
 
 type Task = {
   id: string;
@@ -28,12 +31,17 @@ type Routine = {
   tasks: Task[];
   completed?: boolean;
   createdAt?: number;
+  isRecurring?: boolean;
+  recurringType?: 'daily' | 'weekly' | null;
+  lastCompletedDate?: number;
 };
 
 export default function HomeScreen() {
+  const { colors } = useTheme();
   const [pet, setPet] = useState<string | null>(null);
   const [routine, setRoutine] = useState<Routine | null>(null);
   const [allRoutines, setAllRoutines] = useState<Routine[]>([]);
+  const [currentStreak, setCurrentStreak] = useState<number>(0);
   const router = useRouter();
 
   const animatedXP = useRef(new Animated.Value(0)).current;
@@ -44,6 +52,10 @@ export default function HomeScreen() {
     const activeRoutineId = await AsyncStorage.getItem('activeRoutineId');
 
     if (storedPet) setPet(storedPet);
+
+    // Cargar streak
+    const streak = await getCurrentStreak();
+    setCurrentStreak(streak);
 
     if (storedRoutines) {
       const routines: Routine[] = JSON.parse(storedRoutines);
@@ -144,11 +156,103 @@ export default function HomeScreen() {
       await addXP(task.points);
     }
 
-    // Si todas las rutinas están completadas, actualizar racha
+    // Si todas las rutinas están completadas, actualizar racha y registrar historial
     if (allTasksDone) {
       const allRoutinesCompleted = routines.every((r: Routine) => r.completed);
       if (allRoutinesCompleted) {
         await updateStreak();
+        
+        // Registrar en historial
+        const totalXP = updatedRoutine.tasks.reduce((sum, t) => sum + (t.done ? t.points : 0), 0);
+        await addRoutineHistory({
+          routineId: updatedRoutine.id,
+          routineTitle: updatedRoutine.title,
+          completedAt: Date.now(),
+          tasksCompleted: updatedRoutine.tasks.filter(t => t.done).length,
+          totalTasks: updatedRoutine.tasks.length,
+          xpEarned: totalXP,
+        });
+
+        // Verificar logros
+        const currentStreak = await getCurrentStreak();
+        const totalXPValue = await getXP();
+        const level = getLevel(totalXPValue);
+        const { getRoutineHistory } = await import('../storage/routineHistory');
+        const routineHistory = await getRoutineHistory();
+        const completedCount = routineHistory.length;
+        
+        // Desbloquear logro de primera rutina si es la primera
+        if (completedCount === 1) {
+          const { unlockAchievement } = await import('../storage/achievements');
+          await unlockAchievement('first_routine');
+        }
+        
+        const unlockedAchievements = await checkAchievements(
+          currentStreak,
+          totalXPValue,
+          level,
+          completedCount
+        );
+
+        // Si hay logros desbloqueados, mostrar notificación
+        if (unlockedAchievements.length > 0) {
+          // Mostrar modal de logros (se implementará después)
+          console.log('Logros desbloqueados:', unlockedAchievements);
+        }
+
+        // Si es una rutina recurrente, verificar si debe resetearse
+        if (updatedRoutine.isRecurring) {
+          const now = new Date();
+          const lastCompleted = updatedRoutine.lastCompletedDate 
+            ? new Date(updatedRoutine.lastCompletedDate)
+            : null;
+
+          let shouldReset = false;
+
+          if (updatedRoutine.recurringType === 'daily') {
+            // Resetear si pasó un día
+            if (!lastCompleted || now.toDateString() !== lastCompleted.toDateString()) {
+              shouldReset = true;
+            }
+          } else if (updatedRoutine.recurringType === 'weekly') {
+            // Resetear si pasó una semana
+            if (!lastCompleted) {
+              shouldReset = true;
+            } else {
+              const daysDiff = Math.floor((now.getTime() - lastCompleted.getTime()) / (1000 * 60 * 60 * 24));
+              if (daysDiff >= 7) {
+                shouldReset = true;
+              }
+            }
+          }
+
+          if (shouldReset) {
+            const resetRoutine: Routine = {
+              ...updatedRoutine,
+              completed: false,
+              tasks: updatedRoutine.tasks.map(t => ({ ...t, done: false })),
+              lastCompletedDate: Date.now(),
+            };
+            const updatedRoutinesWithReset = routines.map((r: Routine) =>
+              r.id === resetRoutine.id ? resetRoutine : r
+            );
+            await AsyncStorage.setItem('routines', JSON.stringify(updatedRoutinesWithReset));
+            setRoutine(resetRoutine);
+            setAllRoutines(updatedRoutinesWithReset);
+          } else {
+            // Actualizar lastCompletedDate
+            const updatedRoutineWithDate: Routine = {
+              ...updatedRoutine,
+              lastCompletedDate: Date.now(),
+            };
+            const updatedRoutinesWithDate = routines.map((r: Routine) =>
+              r.id === updatedRoutineWithDate.id ? updatedRoutineWithDate : r
+            );
+            await AsyncStorage.setItem('routines', JSON.stringify(updatedRoutinesWithDate));
+            setRoutine(updatedRoutineWithDate);
+            setAllRoutines(updatedRoutinesWithDate);
+          }
+        }
       }
     }
   };
@@ -227,17 +331,19 @@ export default function HomeScreen() {
     outputRange: ['0%', '100%'],
   });
 
+  const dynamicStyles = getDynamicStyles(colors);
+
   // Si no hay rutinas, mostrar mensaje para crear una
   if (!routine && allRoutines.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, dynamicStyles.container]}>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>No tienes rutinas</Text>
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyTitle, dynamicStyles.emptyTitle]}>No tienes rutinas</Text>
+          <Text style={[styles.emptyText, dynamicStyles.emptyText]}>
             Crea tu primera rutina para comenzar
           </Text>
           <TouchableOpacity
-            style={styles.createButton}
+            style={[styles.createButton, { backgroundColor: colors.primary }]}
             onPress={() => router.push('/(tabs)/routines')}
           >
             <Text style={styles.createButtonText}>Crear rutina</Text>
@@ -252,45 +358,25 @@ export default function HomeScreen() {
     const hasIncompleteRoutines = allRoutines.some((r: Routine) => !r.completed);
     
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, dynamicStyles.container]}>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>
+          <Text style={[styles.emptyTitle, dynamicStyles.emptyTitle]}>
             {hasIncompleteRoutines 
               ? 'No hay rutina activa' 
               : '¡Todas las rutinas completadas!'}
           </Text>
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyText, dynamicStyles.emptyText]}>
             {hasIncompleteRoutines
               ? 'Selecciona una rutina para comenzar'
               : 'Crea una nueva rutina para continuar'}
           </Text>
           <TouchableOpacity
-            style={styles.createButton}
+            style={[styles.createButton, { backgroundColor: colors.primary }]}
             onPress={() => router.push('/(tabs)/routines')}
           >
             <Text style={styles.createButtonText}>
               {hasIncompleteRoutines ? 'Ver rutinas' : 'Crear rutina'}
             </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
-  // Si no hay rutinas en absoluto, mostrar mensaje de crear
-  if (!routine && allRoutines.length === 0) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>No tienes rutinas</Text>
-          <Text style={styles.emptyText}>
-            Crea tu primera rutina para comenzar
-          </Text>
-          <TouchableOpacity
-            style={styles.createButton}
-            onPress={() => router.push('/(tabs)/routines')}
-          >
-            <Text style={styles.createButtonText}>Crear rutina</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -309,62 +395,58 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header estático - Iconos superiores */}
-      <View style={styles.topIcons}>
-        <View style={styles.iconBadge}>
-          <Ionicons name="flame" size={18} color="#ff6b35" />
-          <Text style={styles.iconBadgeText}>1</Text>
-        </View>
-        <View style={styles.iconBadge}>
-          <Ionicons name="trophy" size={18} color="#ffd700" />
-          <Text style={styles.iconBadgeText}>2</Text>
-        </View>
-      </View>
-
-      {/* Header estático - Avatar y título centrado */}
+    <View style={[styles.container, dynamicStyles.container]}>
+      {/* Header minimalista */}
       <View style={styles.header}>
-        <Text style={styles.petAvatar}>
-          {pet === 'dog' ? '🐶' : pet === 'cat' ? '🐱' : '🐣'}
-        </Text>
-        <Text style={styles.routineTitle}>{routine.title}</Text>
-        <Text style={styles.dateText}>{getCurrentDate()}</Text>
+        <View style={styles.headerTop}>
+          <View style={[styles.streakBadge, dynamicStyles.streakBadge]}>
+            <Ionicons name="flame" size={16} color={colors.warning} />
+            <Text style={[styles.streakText, dynamicStyles.streakText]}>{currentStreak}</Text>
+          </View>
+        </View>
         
-        {/* Botones de navegación entre rutinas */}
+        <View style={styles.routineHeader}>
+          <View style={[styles.avatarCircle, dynamicStyles.avatarCircle]}>
+            <Text style={styles.petAvatar}>
+              {pet === 'dog' ? '🐶' : pet === 'cat' ? '🐱' : '🐣'}
+            </Text>
+          </View>
+          <Text style={[styles.routineTitle, dynamicStyles.routineTitle]}>{routine.title}</Text>
+          <Text style={[styles.dateText, dynamicStyles.dateText]}>{getCurrentDate()}</Text>
+        </View>
+
+        {/* Botones de navegación minimalistas */}
         {(hasPreviousRoutine() || hasNextRoutine()) && (
           <View style={styles.navigationButtons}>
             {hasPreviousRoutine() && (
               <TouchableOpacity
-                style={styles.navButton}
+                style={[styles.navButton, dynamicStyles.navButton]}
                 onPress={moveToPreviousRoutine}
               >
-                <Ionicons name="chevron-back" size={20} color="#666" />
-                <Text style={styles.navButtonText}>Anterior</Text>
+                <Ionicons name="chevron-back" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
-            
             {hasNextRoutine() && (
               <TouchableOpacity
-                style={styles.navButton}
+                style={[styles.navButton, dynamicStyles.navButton]}
                 onPress={moveToNextRoutine}
               >
-                <Text style={styles.navButtonText}>Siguiente</Text>
-                <Ionicons name="chevron-forward" size={20} color="#666" />
+                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
           </View>
         )}
       </View>
 
-      {/* Header estático - Barra de progreso */}
+      {/* Barra de progreso minimalista */}
       <View style={styles.progressSection}>
         <View style={styles.progressHeader}>
-          <Text style={styles.progressLabel}>Rutina completada</Text>
-          <Text style={styles.progressPercentage}>{progressXP}%</Text>
+          <Text style={[styles.progressLabel, dynamicStyles.progressLabel]}>Progreso</Text>
+          <Text style={[styles.progressPercentage, { color: colors.primary }]}>{progressXP}%</Text>
         </View>
-        <View style={styles.xpBar}>
+        <View style={[styles.xpBar, dynamicStyles.xpBar]}>
           <Animated.View
-            style={[styles.xpFill, { width: xpWidth }]}
+            style={[styles.xpFill, { width: xpWidth, backgroundColor: colors.primary }]}
           />
         </View>
       </View>
@@ -378,45 +460,51 @@ export default function HomeScreen() {
         {routine.tasks.map(task => (
           <TouchableOpacity
             key={task.id}
-            style={styles.taskCard}
+            style={[styles.taskCard, dynamicStyles.taskCard]}
             onPress={() => toggleTask(task.id)}
+            activeOpacity={0.7}
           >
             <View style={styles.checkboxContainer}>
               {task.done ? (
-                <View style={styles.checkboxChecked}>
-                  <Ionicons name="checkmark" size={16} color="#22c55e" />
+                <View style={[styles.checkboxChecked, { backgroundColor: colors.primary }]}>
+                  <Ionicons name="checkmark" size={14} color="#fff" />
                 </View>
               ) : (
-                <View style={styles.checkbox} />
+                <View style={[styles.checkbox, dynamicStyles.checkbox]} />
               )}
             </View>
 
             <Text
               style={[
                 styles.taskText,
-                task.done && styles.taskTextDone,
+                dynamicStyles.taskText,
+                task.done && [styles.taskTextDone, dynamicStyles.taskTextDone],
               ]}
             >
               {task.title}
             </Text>
 
-            <Text style={styles.points}>
-              {task.points}xp
-            </Text>
+            <View style={[styles.pointsBadge, { backgroundColor: colors.primary + '15' }]}>
+              <Text style={[styles.points, { color: colors.primary }]}>
+                {task.points} XP
+              </Text>
+            </View>
           </TouchableOpacity>
         ))}
 
         {/* Botón para siguiente rutina cuando está completada */}
         {routine.completed && (
           <TouchableOpacity
-            style={styles.nextButton}
+            style={[styles.nextButton, { backgroundColor: colors.primary }]}
             onPress={moveToNextRoutine}
+            activeOpacity={0.8}
           >
             <Text style={styles.nextButtonText}>
               {allRoutines.some((r: Routine) => !r.completed && r.id !== routine.id)
                 ? 'Siguiente rutina'
                 : 'Crear nueva rutina'}
             </Text>
+            <Ionicons name="arrow-forward" size={18} color="#fff" style={{ marginLeft: 8 }} />
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -424,103 +512,150 @@ export default function HomeScreen() {
   );
 }
 
+const getDynamicStyles = (colors: any) => StyleSheet.create({
+  container: {
+    backgroundColor: colors.background,
+  },
+  streakBadge: {
+    backgroundColor: colors.surface,
+  },
+  streakText: {
+    color: colors.text,
+  },
+  avatarCircle: {
+    backgroundColor: colors.surface,
+  },
+  navButton: {
+    backgroundColor: colors.surface,
+  },
+  navButtonText: {
+    color: colors.textSecondary,
+  },
+  routineTitle: {
+    color: colors.text,
+  },
+  dateText: {
+    color: colors.textSecondary,
+  },
+  progressLabel: {
+    color: colors.textSecondary,
+  },
+  xpBar: {
+    backgroundColor: colors.borderLight,
+  },
+  taskCard: {
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  checkbox: {
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  taskText: {
+    color: colors.text,
+  },
+  taskTextDone: {
+    color: colors.textTertiary,
+  },
+  emptyTitle: {
+    color: colors.text,
+  },
+  emptyText: {
+    color: colors.textSecondary,
+  },
+});
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
-  topIcons: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingTop: 24,
-    paddingHorizontal: 24,
-    paddingBottom: 20,
-    gap: 12,
-  },
-  iconBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 4,
-  },
-  iconBadgeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
   },
   header: {
-    alignItems: 'center',
     paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
     marginBottom: 24,
+  },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  streakText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  routineHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  avatarCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  petAvatar: {
+    fontSize: 48,
+  },
+  routineTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 6,
+    letterSpacing: -0.5,
+  },
+  dateText: {
+    fontSize: 14,
+    fontWeight: '400',
   },
   navigationButtons: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 16,
-    marginTop: 16,
+    gap: 12,
+    marginTop: 12,
   },
   navButton: {
-    flexDirection: 'row',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
-  },
-  navButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#666',
-  },
-  petAvatar: {
-    fontSize: 80,
-    marginBottom: 12,
-  },
-  routineTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#000',
-  },
-  dateText: {
-    fontSize: 14,
-    color: '#999',
-    fontWeight: '400',
   },
   progressSection: {
     paddingHorizontal: 24,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   progressHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   progressLabel: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 13,
     fontWeight: '500',
   },
   progressPercentage: {
-    fontSize: 14,
-    color: '#22c55e',
+    fontSize: 13,
     fontWeight: '600',
   },
   xpBar: {
-    height: 8,
-    backgroundColor: '#eee',
-    borderRadius: 4,
+    height: 6,
+    borderRadius: 3,
     overflow: 'hidden',
   },
   xpFill: {
     height: '100%',
-    backgroundColor: '#22c55e',
+    borderRadius: 3,
   },
   tasksScrollView: {
     flex: 1,
@@ -532,46 +667,45 @@ const styles = StyleSheet.create({
   taskCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 56,
-    borderRadius: 12,
+    minHeight: 64,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#e5e5e5',
     paddingHorizontal: 16,
+    paddingVertical: 16,
     marginBottom: 12,
-    backgroundColor: '#fff',
   },
   checkboxContainer: {
-    marginRight: 12,
+    marginRight: 14,
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
   },
   checkboxChecked: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    backgroundColor: '#22c55e',
+    width: 22,
+    height: 22,
+    borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },
   taskText: {
     flex: 1,
-    fontSize: 15,
-    color: '#333',
+    fontSize: 16,
+    fontWeight: '500',
   },
   taskTextDone: {
     textDecorationLine: 'line-through',
-    color: '#999',
+  },
+  pointsBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   points: {
-    fontSize: 13,
-    color: '#999',
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
@@ -592,7 +726,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   createButton: {
-    backgroundColor: '#ff3b3b',
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 16,
@@ -604,14 +737,15 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     marginTop: 24,
-    backgroundColor: '#22c55e',
     paddingVertical: 16,
     borderRadius: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   nextButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
 });

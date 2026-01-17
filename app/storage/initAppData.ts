@@ -13,6 +13,9 @@ export type Routine = {
   tasks: Task[];
   completed?: boolean;
   createdAt?: number;
+  isRecurring?: boolean;
+  recurringType?: 'daily' | 'weekly' | null;
+  lastCompletedDate?: number;
 };
 
 export const DEFAULT_ROUTINE: Routine = {
@@ -40,3 +43,7 @@ export async function initializeDefaultData() {
   }
 }
 
+// Export default para evitar el warning de expo-router
+export default function InitAppData() {
+  return null;
+}

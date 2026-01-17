@@ -14,9 +14,10 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function OnboardingScreen() {
-  // 🧭 Router
+  const { colors } = useTheme();
   const router = useRouter();
 
   const [petName, setPetName] = useState('');
@@ -24,16 +25,16 @@ export default function OnboardingScreen() {
 
   const userInputRef = useRef<TextInput>(null);
 
-  // 🎞 Animaciones inputs
+  // Animaciones inputs
   const petAnim = useRef(new Animated.Value(1)).current;
   const userAnim = useRef(new Animated.Value(1)).current;
 
-  // 🎞 Animación botón
+  // Animación botón
   const buttonAnim = useRef(new Animated.Value(1)).current;
 
   const focusInput = (anim: Animated.Value) => {
     Animated.spring(anim, {
-      toValue: 1.05,
+      toValue: 1.02,
       friction: 7,
       useNativeDriver: true,
     }).start();
@@ -68,39 +69,44 @@ export default function OnboardingScreen() {
   const handleContinue = async () => {
     if (!isFormValid) return;
 
-    // 💾 Guardar datos iniciales
+    // Guardar datos iniciales
     await AsyncStorage.setItem('petName', petName);
     await AsyncStorage.setItem('userName', userName);
     await AsyncStorage.setItem('hasOnboarded', 'true');
 
-    // ➡️ Ir a elegir mascota
+    // Ir a elegir mascota
     router.replace('/choose-pet');
   };
 
+  const dynamicStyles = getDynamicStyles(colors);
+
   return (
     <KeyboardAvoidingView
-      style={styles.root}
+      style={[styles.root, dynamicStyles.root]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.container}>
+        {/* Logo/Icono moderno */}
+        <View style={[styles.logoContainer, dynamicStyles.logoContainer]}>
+          <Ionicons name="sparkles" size={64} color={colors.primary} />
+        </View>
 
-        {/* Logo */}
-        <View style={styles.logo} />
-
-        {/* Títulos */}
-        <Text style={styles.title}>¡Empecemos!</Text>
-        <Text style={styles.subtitle}>
-          Ponle nombre a tu mascota y dinos cómo te llamas
+        {/* Títulos modernos */}
+        <Text style={[styles.title, dynamicStyles.title]}>¡Bienvenido!</Text>
+        <Text style={[styles.subtitle, dynamicStyles.subtitle]}>
+          Comencemos configurando tu perfil
         </Text>
 
-        {/* Mascota */}
-        <Text style={styles.label}>Nombre de tu mascota</Text>
+        {/* Input Mascota */}
+        <View style={styles.inputSection}>
+          <Text style={[styles.label, dynamicStyles.label]}>Nombre de tu mascota</Text>
         <Animated.View style={{ transform: [{ scale: petAnim }] }}>
-          <View style={styles.inputWrapper}>
+            <View style={[styles.inputWrapper, dynamicStyles.inputWrapper]}>
+              <Ionicons name="paw" size={20} color={colors.textSecondary} style={styles.inputIcon} />
             <TextInput
-              style={styles.input}
+                style={[styles.input, dynamicStyles.input]}
               placeholder="Ej: Rocky"
-              placeholderTextColor="#999"
+                placeholderTextColor={colors.textTertiary}
               value={petName}
               onChangeText={setPetName}
               returnKeyType="next"
@@ -109,28 +115,26 @@ export default function OnboardingScreen() {
               onBlur={() => blurInput(petAnim)}
               onSubmitEditing={() => userInputRef.current?.focus()}
             />
-            <TouchableOpacity
-              style={[
-                styles.inputButton,
-                !isPetValid && styles.buttonDisabled,
-              ]}
-              disabled={!isPetValid}
-              onPress={() => userInputRef.current?.focus()}
-            >
-              <Ionicons name="arrow-forward" size={22} color="#fff" />
-            </TouchableOpacity>
+              {isPetValid && (
+                <View style={[styles.checkIcon, { backgroundColor: colors.success + '20' }]}>
+                  <Ionicons name="checkmark" size={16} color={colors.success} />
+                </View>
+              )}
           </View>
         </Animated.View>
+        </View>
 
-        {/* Usuario */}
-        <Text style={styles.label}>Tu nombre</Text>
+        {/* Input Usuario */}
+        <View style={styles.inputSection}>
+          <Text style={[styles.label, dynamicStyles.label]}>Tu nombre</Text>
         <Animated.View style={{ transform: [{ scale: userAnim }] }}>
-          <View style={styles.inputWrapper}>
+            <View style={[styles.inputWrapper, dynamicStyles.inputWrapper]}>
+              <Ionicons name="person" size={20} color={colors.textSecondary} style={styles.inputIcon} />
             <TextInput
               ref={userInputRef}
-              style={styles.input}
+                style={[styles.input, dynamicStyles.input]}
               placeholder="Ej: Steven"
-              placeholderTextColor="#999"
+                placeholderTextColor={colors.textTertiary}
               value={userName}
               onChangeText={setUserName}
               returnKeyType="done"
@@ -138,18 +142,14 @@ export default function OnboardingScreen() {
               onBlur={() => blurInput(userAnim)}
               onSubmitEditing={Keyboard.dismiss}
             />
-            <TouchableOpacity
-              style={[
-                styles.inputButton,
-                !isUserValid && styles.buttonDisabled,
-              ]}
-              disabled={!isUserValid}
-              onPress={Keyboard.dismiss}
-            >
-              <Ionicons name="checkmark" size={22} color="#fff" />
-            </TouchableOpacity>
+              {isUserValid && (
+                <View style={[styles.checkIcon, { backgroundColor: colors.success + '20' }]}>
+                  <Ionicons name="checkmark" size={16} color={colors.success} />
+                </View>
+              )}
           </View>
         </Animated.View>
+        </View>
 
         {/* Botón continuar */}
         <TouchableWithoutFeedback
@@ -161,102 +161,124 @@ export default function OnboardingScreen() {
           <Animated.View
             style={[
               styles.mainButton,
+              { backgroundColor: colors.primary },
               !isFormValid && styles.mainButtonDisabled,
               { transform: [{ scale: buttonAnim }] },
             ]}
           >
             <Text style={styles.mainButtonText}>Continuar</Text>
+            <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
           </Animated.View>
         </TouchableWithoutFeedback>
-
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-/* ======================
-   ESTILOS
-====================== */
+const getDynamicStyles = (colors: any) => StyleSheet.create({
+  root: {
+    backgroundColor: colors.background,
+  },
+  logoContainer: {
+    backgroundColor: colors.surface,
+  },
+  title: {
+    color: colors.text,
+  },
+  subtitle: {
+    color: colors.textSecondary,
+  },
+  label: {
+    color: colors.textSecondary,
+  },
+  inputWrapper: {
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  input: {
+    color: colors.text,
+  },
+});
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   container: {
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 80,
+    paddingBottom: 40,
   },
-  logo: {
-    width: 140,
-    height: 140,
-    backgroundColor: '#e0e0e0',
+  logoContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 30,
     alignSelf: 'center',
-    marginBottom: 20,
-    borderRadius: 24,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#777',
-    textAlign: 'center',
-    marginBottom: 30,
-    marginTop: 6,
-  },
-  label: {
-    fontSize: 13,
-    color: '#999',
-    marginBottom: 6,
-    marginLeft: 4,
-  },
-  inputWrapper: {
-    position: 'relative',
-    marginBottom: 20,
-  },
-  input: {
-    width: '100%',
-    height: 52,
-    borderWidth: 1.5,
-    borderColor: '#ff3b3b',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingRight: 60,
-    fontSize: 14,
-    backgroundColor: '#fff',
-  },
-  inputButton: {
-    position: 'absolute',
-    right: 6,
-    top: 6,
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#ff3b3b',
+    marginBottom: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  buttonDisabled: {
-    opacity: 0.4,
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 40,
+    fontWeight: '400',
+  },
+  inputSection: {
+    marginBottom: 24,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 56,
+    borderWidth: 1.5,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    position: 'relative',
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  checkIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   mainButton: {
-    marginTop: 10,
-    backgroundColor: '#ff3b3b',
+    marginTop: 20,
     height: 56,
-    borderRadius: 18,
+    borderRadius: 16,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
   mainButtonDisabled: {
-    opacity: 0.4,
+    opacity: 0.5,
   },
   mainButtonText: {
     color: '#fff',
-    fontSize: 17,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

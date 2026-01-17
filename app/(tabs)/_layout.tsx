@@ -1,7 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function TabsLayout() {
+  const { colors } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
@@ -12,7 +15,8 @@ export default function TabsLayout() {
           paddingBottom: 10,
           paddingTop: 10,
           borderTopWidth: 0,
-          backgroundColor: '#ffffff',
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
         },
       }}
     >
@@ -23,7 +27,7 @@ export default function TabsLayout() {
             <Ionicons
               name={focused ? 'home' : 'home-outline'}
               size={26}
-              color={focused ? '#ff3b3b' : '#999'}
+              color={focused ? colors.primary : colors.textTertiary}
             />
           ),
         }}
@@ -36,7 +40,7 @@ export default function TabsLayout() {
             <Ionicons
               name={focused ? 'list' : 'list-outline'}
               size={26}
-              color={focused ? '#ff3b3b' : '#999'}
+              color={focused ? colors.primary : colors.textTertiary}
             />
           ),
         }}
@@ -49,7 +53,7 @@ export default function TabsLayout() {
             <Ionicons
               name={focused ? 'person' : 'person-outline'}
               size={26}
-              color={focused ? '#ff3b3b' : '#999'}
+              color={focused ? colors.primary : colors.textTertiary}
             />
           ),
         }}

@@ -1,50 +1,128 @@
-# Welcome to your Expo app 👋
+# Rutina App 📱
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Una aplicación moderna y elegante para gestionar tus rutinas diarias, con sistema de logros, estadísticas y mucho más.
 
-## Get started
+## 📋 Características Principales
 
-1. Install dependencies
+### ✅ Gestión de Rutinas
+- Crear, editar y eliminar rutinas personalizadas
+- Agregar y reordenar tareas dentro de cada rutina
+- Sistema de puntos XP por cada tarea completada
+- Rutinas recurrentes (diarias o semanales)
+- Duplicar rutinas existentes
+- Plantillas predefinidas para crear rutinas rápidamente
 
-   ```bash
-   npm install
-   ```
+### 🏆 Sistema de Logros
+- 8 logros desbloqueables
+- Verificación automática al completar rutinas
+- Pantalla dedicada para ver tu progreso
 
-2. Start the app
+### 📊 Estadísticas Avanzadas
+- Vista semanal con gráficos de actividad
+- Estadísticas mensuales
+- Seguimiento de rachas (current y best streak)
+- Historial de rutinas completadas
 
-   ```bash
-   npx expo start
-   ```
+### 📅 Calendario
+- Vista mensual y semanal
+- Agregar eventos a fechas específicas
+- Visualización clara de días con eventos
 
-In the output, you'll find options to open the app in a
+### 📝 Notas
+- Crear y gestionar notas personalizadas
+- Colores personalizables
+- Sistema de notas fijadas (pinned)
+- Buscar y organizar notas
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### 🌓 Tema Oscuro/Claro
+- Soporte completo para modo claro y oscuro
+- Persistencia de preferencia del usuario
+- Diseño consistente en ambos modos
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### 💾 Backup y Restauración
+- Crear backups de todos tus datos
+- Restaurar desde archivos JSON
+- Exportar datos para análisis externo
 
-## Get a fresh project
+### 🔔 Notificaciones (Requerirá build de desarrollo)
+- Recordatorios diarios de rutinas
+- Alertas para mantener tu racha activa
 
-When you're ready, run:
+## 📁 Estructura del Proyecto
 
-```bash
-npm run reset-project
+```
+rutina_App/
+├── app/                      # Pantallas de la aplicación
+│   ├── (tabs)/              # Navegación por pestañas
+│   │   ├── home.tsx         # Pantalla principal - Muestra rutina activa
+│   │   ├── routines.tsx     # Lista de todas las rutinas
+│   │   └── profile.tsx      # Perfil del usuario
+│   ├── calendar.tsx         # Calendario y eventos
+│   ├── notes.tsx            # Lista de notas
+│   ├── edit-note.tsx        # Crear/editar nota
+│   ├── edit-routine.tsx     # Crear/editar rutina
+│   ├── achievements.tsx     # Pantalla de logros
+│   ├── stats.tsx            # Estadísticas detalladas
+│   ├── backup.tsx           # Backup y restauración
+│   ├── settings.tsx         # Configuración de la app
+│   ├── routine-templates.tsx # Plantillas de rutinas
+│   ├── choose-pet.tsx       # Selección de mascota
+│   └── index.tsx            # Pantalla de onboarding
+├── storage/                 # Gestión de datos locales
+│   ├── achievements.ts      # Lógica de logros
+│   ├── routineHistory.ts    # Historial de rutinas
+│   ├── routineTemplates.ts  # Plantillas predefinidas
+│   ├── notes.ts             # Gestión de notas
+│   ├── streak.ts            # Sistema de rachas
+│   └── userProgress.ts      # Progreso y XP del usuario
+├── utils/                   # Utilidades
+│   ├── backup.ts            # Funciones de backup/restore
+│   └── notifications.ts     # Sistema de notificaciones
+├── contexts/                # Contextos de React
+│   └── ThemeContext.tsx     # Contexto de tema (claro/oscuro)
+└── constants/               # Constantes
+    └── theme.ts             # Colores y estilos del tema
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🚀 Instalación
 
-## Learn more
+```bash
+# Instalar dependencias
+npm install
 
-To learn more about developing your project with Expo, look at the following resources:
+# Iniciar el servidor de desarrollo
+npm start
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 📱 Tecnologías Utilizadas
 
-## Join the community
+- **React Native** - Framework principal
+- **Expo Router** - Navegación entre pantallas
+- **AsyncStorage** - Almacenamiento local persistente
+- **Expo Notifications** - Sistema de notificaciones
+- **TypeScript** - Tipado estático
 
-Join our community of developers creating universal apps.
+## 🎨 Características de Diseño
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- **Minimalista y moderno**: Diseño limpio y fácil de usar
+- **Consistente**: Mismo lenguaje visual en toda la app
+- **Accesible**: Colores y contrastes adecuados
+- **Responsive**: Se adapta a diferentes tamaños de pantalla
+
+## 📝 Notas de Desarrollo
+
+- Las notificaciones requieren un desarrollo build (no funcionan en Expo Go)
+- Los datos se guardan localmente usando AsyncStorage
+- El sistema de rachas se resetea automáticamente si no completas todas las rutinas del día
+
+## 🔧 Próximas Mejoras
+
+- [ ] Sincronización en la nube
+- [ ] Modo offline mejorado
+- [ ] Más plantillas de rutinas
+- [ ] Widgets para pantalla de inicio
+- [ ] Exportar estadísticas en PDF
+
+---
+
+Desarrollado con ❤️ usando React Native y Expo
