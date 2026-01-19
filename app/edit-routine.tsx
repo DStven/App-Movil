@@ -4,13 +4,22 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   Alert,
-  FlatList,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  Extrapolate,
+  interpolate,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring
+} from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
 
 type Task = {
@@ -25,6 +34,9 @@ type Routine = {
   title: string;
   tasks: Task[];
   createdAt?: number;
+  isRecurring?: boolean;
+  recurringType?: 'daily' | 'weekly' | null;
+  lastCompletedDate?: number;
 };
 
 export default function EditRoutineScreen() {
@@ -34,6 +46,8 @@ export default function EditRoutineScreen() {
   const [newTask, setNewTask] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringType, setRecurringType] = useState<'daily' | 'weekly' | null>(null);
+  const [isNewAndUnchanged, setIsNewAndUnchanged] = useState(true);
+  const [draggedTask, setDraggedTask] = useState<string | null>(null);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
 
@@ -41,40 +55,28 @@ export default function EditRoutineScreen() {
     loadRoutine();
   }, [id]);
 
-  /* =========================
-     CARGAR RUTINA
-  ========================= */
   const loadRoutine = async () => {
     const stored = await AsyncStorage.getItem('routines');
     let routines: Routine[] = stored ? JSON.parse(stored) : [];
     let routineToEdit: Routine | undefined;
 
     if (id) {
-      // Buscar rutina por ID
       routineToEdit = routines.find(r => r.id === id);
+      setIsNewAndUnchanged(false);
       if (routineToEdit) {
         setIsRecurring(routineToEdit.isRecurring || false);
         setRecurringType(routineToEdit.recurringType || null);
       }
     } else {
-      // Si no hay ID, es una nueva rutina
       const now = Date.now();
       const newRoutine: Routine = {
         id: now.toString(),
-        title: 'Nueva rutina',
+        title: '',
         tasks: [],
-        createdAt: now, // Guardar fecha de creación
+        createdAt: now,
       };
       routineToEdit = newRoutine;
-      // Guardar la nueva rutina al final del array (orden de creación)
-      routines.push(newRoutine);
-      await AsyncStorage.setItem('routines', JSON.stringify(routines));
-      // NO establecer como rutina activa automáticamente
-      // Solo establecerla como activa si no hay ninguna activa
-      const activeRoutineId = await AsyncStorage.getItem('activeRoutineId');
-      if (!activeRoutineId) {
-        await AsyncStorage.setItem('activeRoutineId', newRoutine.id);
-      }
+      setIsNewAndUnchanged(true);
     }
 
     if (routineToEdit) {
@@ -83,43 +85,32 @@ export default function EditRoutineScreen() {
     }
   };
 
-  /* =========================
-     GUARDAR RUTINA
-  ========================= */
   const saveRoutine = async (updated: Routine) => {
     const stored = await AsyncStorage.getItem('routines');
-    if (!stored) return;
+    let routines: Routine[] = stored ? JSON.parse(stored) : [];
 
-    const routinesParsed: Routine[] = JSON.parse(stored);
+    if (!id && !routines.find(r => r.id === updated.id)) {
+      routines.push(updated);
+    } else {
+      routines = routines.map((r: Routine) =>
+        r.id === updated.id ? updated : r
+      );
+    }
 
-    // Mantener createdAt si ya existe, o usar el ID como referencia
-    const existingRoutine = routinesParsed.find((r: Routine) => r.id === updated.id);
-    const routineToSave: Routine = {
-      ...updated,
-      createdAt: existingRoutine?.createdAt || parseInt(updated.id) || Date.now(),
-    };
-
-    const updatedRoutines = routinesParsed.map((r: Routine) =>
-      r.id === updated.id ? routineToSave : r
-    );
-
-    // Ordenar por fecha de creación (más antiguas primero)
-    const sortedRoutines = updatedRoutines.sort((a, b) => {
+    const sortedRoutines = routines.sort((a, b) => {
       const dateA = a.createdAt || parseInt(a.id) || 0;
       const dateB = b.createdAt || parseInt(b.id) || 0;
       return dateA - dateB;
     });
 
     await AsyncStorage.setItem('routines', JSON.stringify(sortedRoutines));
-    setRoutine(routineToSave);
+    setRoutine(updated);
   };
 
-  /* =========================
-     AGREGAR TAREA
-  ========================= */
   const addTask = () => {
     if (!newTask.trim() || !routine) return;
-
+    setIsNewAndUnchanged(false);
+    
     const updated: Routine = {
       ...routine,
       tasks: [
@@ -133,13 +124,10 @@ export default function EditRoutineScreen() {
       ],
     };
 
-    saveRoutine(updated);
+    setRoutine(updated);
     setNewTask('');
   };
 
-  /* =========================
-     ELIMINAR TAREA
-  ========================= */
   const deleteTask = (id: string) => {
     if (!routine) return;
 
@@ -153,52 +141,50 @@ export default function EditRoutineScreen() {
             ...routine,
             tasks: routine.tasks.filter((t) => t.id !== id),
           };
-          saveRoutine(updated);
+          setRoutine(updated);
         },
       },
     ]);
   };
 
-  /* =========================
-     REORDENAR TAREAS
-  ========================= */
-  const moveTask = (taskId: string, direction: 'up' | 'down') => {
-    if (!routine) return;
-
-    const taskIndex = routine.tasks.findIndex(t => t.id === taskId);
-    if (taskIndex === -1) return;
-
-    if (direction === 'up' && taskIndex === 0) return;
-    if (direction === 'down' && taskIndex === routine.tasks.length - 1) return;
+  const reorderTasks = (fromIndex: number, toIndex: number) => {
+    if (!routine || fromIndex === toIndex) return;
 
     const newTasks = [...routine.tasks];
-    const targetIndex = direction === 'up' ? taskIndex - 1 : taskIndex + 1;
-    [newTasks[taskIndex], newTasks[targetIndex]] = [newTasks[targetIndex], newTasks[taskIndex]];
+    const [movedTask] = newTasks.splice(fromIndex, 1);
+    newTasks.splice(toIndex, 0, movedTask);
 
     const updated: Routine = {
       ...routine,
       tasks: newTasks,
     };
-    saveRoutine(updated);
+    setRoutine(updated);
+    setDraggedTask(null);
   };
 
-  /* =========================
-     GUARDAR Y VOLVER
-  ========================= */
   const handleSaveAndExit = async () => {
     if (!routine) return;
 
-    // Actualizar el título y opciones de recurrencia antes de guardar
+    const titleTrimmed = routineTitle.trim();
+
+    if (!titleTrimmed) {
+      Alert.alert(
+        'Rutina sin nombre',
+        'Debes darle un nombre a la rutina para guardarla',
+        [{ text: 'Entendido', style: 'default' }]
+      );
+      return;
+    }
+
     const updatedRoutine = {
       ...routine,
-      title: routineTitle,
+      title: titleTrimmed,
       isRecurring,
       recurringType: isRecurring ? recurringType : null,
     };
+    
     await saveRoutine(updatedRoutine);
     
-    // NO cambiar la rutina activa automáticamente
-    // Solo establecerla como activa si no hay ninguna activa
     if (!id) {
       const activeRoutineId = await AsyncStorage.getItem('activeRoutineId');
       if (!activeRoutineId) {
@@ -209,129 +195,216 @@ export default function EditRoutineScreen() {
     router.back();
   };
 
+  const handleGoBack = () => {
+    router.back();
+  };
+
+  const handleRoutineTitleChange = (text: string) => {
+    setRoutineTitle(text);
+    if (text.trim()) {
+      setIsNewAndUnchanged(false);
+    }
+  };
+
   if (!routine) return null;
 
   const dynamicStyles = getDynamicStyles(colors);
 
   return (
-    <View style={[styles.container, dynamicStyles.container]}>
-      <Text style={[styles.title, dynamicStyles.title]}>Editar rutina</Text>
-
-      {/* Nombre rutina */}
-      <TextInput
-        style={[styles.input, dynamicStyles.input]}
-        value={routineTitle}
-        onChangeText={setRoutineTitle}
-        placeholder="Nombre de la rutina"
-        placeholderTextColor={colors.textTertiary}
-      />
-
-      {/* Opciones de recurrencia */}
-      <View style={[styles.recurringSection, dynamicStyles.recurringSection]}>
-        <View style={styles.recurringHeader}>
-          <Ionicons name="repeat" size={20} color={colors.primary} />
-          <Text style={[styles.recurringLabel, dynamicStyles.recurringLabel]}>Rutina recurrente</Text>
+    <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
+      <View style={styles.content}>
+        {/* Header con botón atrás */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.title, dynamicStyles.title]}>Editar rutina</Text>
+          <View style={{ width: 40 }} />
         </View>
-        <TouchableOpacity
-          style={[styles.toggleButton, isRecurring && { backgroundColor: colors.primary }]}
-          onPress={() => {
-            setIsRecurring(!isRecurring);
-            if (isRecurring) setRecurringType(null);
-          }}
-        >
-          <Text style={[styles.toggleText, { color: isRecurring ? '#fff' : colors.text }]}>
-            {isRecurring ? 'Activada' : 'Desactivada'}
-          </Text>
-        </TouchableOpacity>
-        {isRecurring && (
-          <View style={styles.recurringOptions}>
-            <TouchableOpacity
-              style={[
-                styles.recurringOption,
-                recurringType === 'daily' && { backgroundColor: colors.primary + '20', borderColor: colors.primary },
-              ]}
-              onPress={() => setRecurringType('daily')}
-            >
-              <Text style={[styles.recurringOptionText, { color: recurringType === 'daily' ? colors.primary : colors.text }]}>
-                Diaria
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.recurringOption,
-                recurringType === 'weekly' && { backgroundColor: colors.primary + '20', borderColor: colors.primary },
-              ]}
-              onPress={() => setRecurringType('weekly')}
-            >
-              <Text style={[styles.recurringOptionText, { color: recurringType === 'weekly' ? colors.primary : colors.text }]}>
-                Semanal
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
 
-      {/* Nueva tarea */}
-      <View style={styles.addTask}>
+        {/* Nombre rutina */}
         <TextInput
-          style={[styles.addInput, dynamicStyles.addInput]}
-          value={newTask}
-          onChangeText={setNewTask}
-          placeholder="Nueva tarea"
+          style={[styles.input, dynamicStyles.input]}
+          value={routineTitle}
+          onChangeText={handleRoutineTitleChange}
+          placeholder="Nombre de la rutina"
           placeholderTextColor={colors.textTertiary}
         />
-        <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={addTask}>
-          <Text style={styles.addText}>＋</Text>
+
+        {/* Opciones de recurrencia */}
+        <View style={[styles.recurringSection, dynamicStyles.recurringSection]}>
+          <View style={styles.recurringHeader}>
+            <Ionicons name="repeat" size={20} color={colors.primary} />
+            <Text style={[styles.recurringLabel, dynamicStyles.recurringLabel]}>Rutina recurrente</Text>
+          </View>
+          <TouchableOpacity
+            style={[
+              styles.toggleButton,
+              isRecurring 
+                ? { backgroundColor: colors.primary } 
+                : { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }
+            ]}
+            onPress={() => {
+              setIsRecurring(!isRecurring);
+              if (isRecurring) setRecurringType(null);
+            }}
+          >
+            <Text style={[styles.toggleText, { color: isRecurring ? '#fff' : colors.text }]}>
+              {isRecurring ? 'Activada' : 'Desactivada'}
+            </Text>
+          </TouchableOpacity>
+          {isRecurring && (
+            <View style={styles.recurringOptions}>
+              <TouchableOpacity
+                style={[
+                  styles.recurringOption,
+                  dynamicStyles.recurringOption,
+                  recurringType === 'daily' && { backgroundColor: colors.primary + '20', borderColor: colors.primary },
+                ]}
+                onPress={() => setRecurringType('daily')}
+              >
+                <Text style={[styles.recurringOptionText, { color: recurringType === 'daily' ? colors.primary : colors.text }]}>
+                  Diaria
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.recurringOption,
+                  dynamicStyles.recurringOption,
+                  recurringType === 'weekly' && { backgroundColor: colors.primary + '20', borderColor: colors.primary },
+                ]}
+                onPress={() => setRecurringType('weekly')}
+              >
+                <Text style={[styles.recurringOptionText, { color: recurringType === 'weekly' ? colors.primary : colors.text }]}>
+                  Semanal
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
+        {/* Nueva tarea */}
+        <View style={styles.addTask}>
+          <TextInput
+            style={[styles.addInput, dynamicStyles.addInput]}
+            value={newTask}
+            onChangeText={setNewTask}
+            placeholder="Nueva tarea"
+            placeholderTextColor={colors.textTertiary}
+          />
+          <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={addTask}>
+            <Text style={styles.addText}>＋</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Lista tareas con drag & drop */}
+        <View style={styles.tasksList}>
+          {routine.tasks.length === 0 ? (
+            <View style={styles.emptyTasks}>
+              <Ionicons name="list-outline" size={40} color={colors.textTertiary} />
+              <Text style={[styles.emptyTasksText, { color: colors.textSecondary }]}>
+                No hay tareas aún
+              </Text>
+              <Text style={[styles.emptyTasksSubtext, { color: colors.textTertiary }]}>
+                Agrega una tarea para comenzar
+              </Text>
+            </View>
+          ) : (
+            routine.tasks.map((item, index) => (
+              <TaskRow
+                key={item.id}
+                task={item}
+                index={index}
+                totalTasks={routine.tasks.length}
+                isDragged={draggedTask === item.id}
+                onDelete={() => deleteTask(item.id)}
+                onReorder={(fromIndex, toIndex) => reorderTasks(fromIndex, toIndex)}
+                colors={colors}
+                dynamicStyles={dynamicStyles}
+              />
+            ))
+          )}
+        </View>
+
+        {/* Botón guardar */}
+        <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSaveAndExit}>
+          <Text style={styles.saveButtonText}>Guardar</Text>
         </TouchableOpacity>
       </View>
+    </SafeAreaView>
+  );
+}
 
-      {/* Lista tareas */}
-      <FlatList
-        data={routine.tasks}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => (
-          <View style={[styles.taskRow, dynamicStyles.taskRow]}>
-            <View style={styles.taskContent}>
-              <Text style={[styles.taskNumber, dynamicStyles.taskNumber]}>{index + 1}.</Text>
-              <Text style={[styles.taskText, dynamicStyles.taskText]}>{item.title}</Text>
-              <Text style={[styles.taskPoints, dynamicStyles.taskPoints]}>{item.points} XP</Text>
-            </View>
-            <View style={styles.taskActions}>
-              <TouchableOpacity
-                style={[styles.moveButton, dynamicStyles.moveButton]}
-                onPress={() => moveTask(item.id, 'up')}
-                disabled={index === 0}
-              >
-                <Ionicons
-                  name="chevron-up"
-                  size={18}
-                  color={index === 0 ? colors.textTertiary : colors.textSecondary}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.moveButton, dynamicStyles.moveButton]}
-                onPress={() => moveTask(item.id, 'down')}
-                disabled={index === routine.tasks.length - 1}
-              >
-                <Ionicons
-                  name="chevron-down"
-                  size={18}
-                  color={index === routine.tasks.length - 1 ? colors.textTertiary : colors.textSecondary}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => deleteTask(item.id)}>
-                <Ionicons name="trash-outline" size={18} color={colors.error} />
-              </TouchableOpacity>
-            </View>
+// Componente para cada tarea con drag & drop
+function TaskRow({
+  task,
+  index,
+  totalTasks,
+  isDragged,
+  onDelete,
+  onReorder,
+  colors,
+  dynamicStyles,
+}: {
+  task: Task;
+  index: number;
+  totalTasks: number;
+  isDragged: boolean;
+  onDelete: () => void;
+  onReorder: (fromIndex: number, toIndex: number) => void;
+  colors: any;
+  dynamicStyles: any;
+}) {
+  const translateY = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      translateY.value = event.translationY;
+      scale.value = 1.05;
+    })
+    .onEnd((event) => {
+      const itemHeight = 56;
+      const moveDistance = event.translationY;
+      const targetIndex = Math.round(moveDistance / itemHeight);
+      const newIndex = Math.max(0, Math.min(totalTasks - 1, index + targetIndex));
+
+      if (newIndex !== index) {
+        runOnJS(onReorder)(index, newIndex);
+      }
+
+      translateY.value = withSpring(0);
+      scale.value = withSpring(1);
+    });
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { translateY: translateY.value },
+        { scale: scale.value },
+      ],
+      opacity: interpolate(scale.value, [1, 1.05], [1, 0.8], Extrapolate.CLAMP),
+    };
+  });
+
+  return (
+    <GestureDetector gesture={panGesture}>
+      <Animated.View style={[styles.taskRowContainer, animatedStyle]}>
+        <View style={[styles.taskRow, dynamicStyles.taskRow, isDragged && styles.taskRowDragging]}>
+          <View style={styles.dragHandle}>
+            <Ionicons name="reorder-three" size={20} color={colors.textSecondary} />
           </View>
-        )}
-      />
-
-      {/* Botón guardar */}
-      <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSaveAndExit}>
-        <Text style={styles.saveButtonText}>Guardar</Text>
-      </TouchableOpacity>
-    </View>
+          <View style={styles.taskContent}>
+            <Text style={[styles.taskNumber, dynamicStyles.taskNumber]}>{index + 1}.</Text>
+            <Text style={[styles.taskText, dynamicStyles.taskText]}>{task.title}</Text>
+            <Text style={[styles.taskPoints, dynamicStyles.taskPoints]}>{task.points} XP</Text>
+          </View>
+          <TouchableOpacity onPress={onDelete} style={styles.deleteButton}>
+            <Ionicons name="trash-outline" size={18} color={colors.error} />
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+    </GestureDetector>
   );
 }
 
@@ -365,9 +438,6 @@ const getDynamicStyles = (colors: any) => StyleSheet.create({
   taskPoints: {
     color: colors.textSecondary,
   },
-  moveButton: {
-    backgroundColor: colors.surface,
-  },
   recurringSection: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
@@ -375,20 +445,37 @@ const getDynamicStyles = (colors: any) => StyleSheet.create({
   recurringLabel: {
     color: colors.text,
   },
+  recurringOption: {
+    borderColor: colors.border,
+  },
 });
 
-/* =========================
-   ESTILOS
-========================= */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 16,
+    flex: 1,
+    textAlign: 'center',
   },
   input: {
     height: 50,
@@ -421,13 +508,34 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 22,
   },
+  tasksList: {
+    flex: 1,
+    marginBottom: 16,
+  },
+  taskRowContainer: {
+    marginBottom: 8,
+  },
   taskRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     minHeight: 56,
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  taskRowDragging: {
+    opacity: 0.7,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  dragHandle: {
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   taskContent: {
     flex: 1,
@@ -449,16 +557,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  taskActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  moveButton: {
+  deleteButton: {
+    marginLeft: 8,
     padding: 4,
   },
   saveButton: {
-    marginTop: 20,
+    marginBottom: 16,
     height: 50,
     borderRadius: 16,
     justifyContent: 'center',
@@ -490,7 +594,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
     marginBottom: 12,
   },
   toggleText: {
@@ -506,12 +609,26 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#e5e5e5',
     justifyContent: 'center',
     alignItems: 'center',
   },
   recurringOptionText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  emptyTasks: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyTasksText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+  },
+  emptyTasksSubtext: {
+    fontSize: 14,
+    marginTop: 4,
   },
 });

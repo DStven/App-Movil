@@ -80,8 +80,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
   },
   backButton: {
     width: 40,
@@ -99,6 +99,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
+    paddingVertical: 16,
     paddingBottom: 32,
   },
   section: {
@@ -106,6 +107,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 20,
     marginBottom: 20,
+    marginTop: 0,
   },
   sectionTitle: {
     fontSize: 18,

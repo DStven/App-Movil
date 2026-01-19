@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -62,10 +63,23 @@ export default function EditNoteScreen() {
   const handleSave = async () => {
     if (!note) return;
 
+    const titleTrimmed = title.trim();
+    const contentTrimmed = content.trim();
+
+    // Validar: al menos título O contenido debe tener algo
+    if (!titleTrimmed && !contentTrimmed) {
+      Alert.alert(
+        'Nota vacía',
+        'Debes escribir al menos un título o contenido para guardar la nota',
+        [{ text: 'Entendido', style: 'default' }]
+      );
+      return;
+    }
+
     const updatedNote: Note = {
       ...note,
-      title: title.trim(),
-      content: content.trim(),
+      title: titleTrimmed,
+      content: contentTrimmed,
       updatedAt: Date.now(),
     };
 

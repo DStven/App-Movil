@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Modal,
@@ -173,7 +173,6 @@ export default function CalendarScreen() {
    */
   const renderWeekView = (colors: any, dynamicStyles: any) => {
     const today = new Date();
-    // Calcular el inicio de la semana (domingo)
     const currentWeekStart = new Date(currentDate);
     const dayOfWeek = currentWeekStart.getDay();
     currentWeekStart.setDate(currentDate.getDate() - dayOfWeek);
@@ -187,24 +186,14 @@ export default function CalendarScreen() {
 
     return (
       <View style={styles.weekViewContainer}>
-        {/* Nombres de los días de la semana */}
-        <View style={styles.weekHeader}>
-          {weekDays.map((date, index) => (
-            <View key={index} style={styles.weekHeaderDay}>
-              <Text style={[styles.weekHeaderText, dynamicStyles.weekHeaderText]}>
-                {DAYS[date.getDay()].charAt(0)}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Tarjetas de los días */}
+        {/* Grid de días */}
         <View style={styles.weekDaysGrid}>
           {weekDays.map((date, index) => {
             const dateKey = formatDateKey(date);
             const dayEvents = getEventsForDate(dateKey);
             const isToday = dateKey === formatDateKey(today);
             const isSelected = selectedDate === dateKey;
+            const dayName = DAYS[date.getDay()];
 
             return (
               <TouchableOpacity
@@ -212,51 +201,55 @@ export default function CalendarScreen() {
                 style={[
                   styles.weekDayCard,
                   dynamicStyles.weekDayCard,
-                  isToday && [styles.weekDayCardToday, { backgroundColor: colors.primary + '15', borderColor: colors.primary }],
-                  isSelected && !isToday && [styles.weekDayCardSelected, { borderColor: colors.primary }],
+                  isToday && { backgroundColor: colors.primary + '15', borderColor: colors.primary, borderWidth: 2 },
+                  isSelected && !isToday && { borderColor: colors.primary, borderWidth: 2 },
                 ]}
                 onPress={() => {
-                  const existingEvents = getEventsForDate(dateKey);
-                  if (existingEvents.length > 0) {
-                    setSelectedDate(dateKey);
-                  } else {
-                    setSelectedDate(dateKey);
+                  setSelectedDate(dateKey);
+                  if (dayEvents.length === 0) {
                     setEventTitle('');
                     setEventTime('');
                     setShowModal(true);
                   }
                 }}
-                activeOpacity={0.7}
+                activeOpacity={0.6}
               >
+                {/* Nombre del día */}
+                <Text style={[styles.weekDayName, dynamicStyles.weekDayName]}>
+                  {dayName}
+                </Text>
+                
+                {/* Número del día */}
                 <Text
-                  style={[
-                    styles.weekDayNumber,
-                    dynamicStyles.weekDayNumber,
-                    isToday && [styles.weekDayNumberToday, { color: colors.primary }],
-                    isSelected && !isToday && { color: colors.primary },
-                  ]}
+                  style={[styles.weekDayNumber, dynamicStyles.weekDayNumber, isToday && { color: colors.primary, fontWeight: '700' }, isSelected && !isToday && { color: colors.primary }]}
                 >
                   {date.getDate()}
                 </Text>
+
+                {/* Eventos */}
                 {dayEvents.length > 0 ? (
                   <View style={styles.weekEventsContainer}>
-                    {dayEvents.slice(0, 2).map((event, eventIndex) => (
-                      <View key={event.id} style={[styles.weekEventBadge, { backgroundColor: colors.primary + '20' }]}>
+                    {dayEvents.slice(0, 1).map((event) => (
+                      <View key={event.id} style={[styles.weekEventBadge, { backgroundColor: colors.primary + '25' }]}>
                         <Text 
                           style={[styles.weekEventText, { color: colors.primary }]} 
                           numberOfLines={1}
                         >
-                          {event.title}
+                          {event.title.length > 12 ? event.title.substring(0, 12) + '...' : event.title}
                         </Text>
                       </View>
                     ))}
-                    {dayEvents.length > 2 && (
+                    {dayEvents.length > 1 && (
                       <Text style={[styles.weekEventMore, { color: colors.textSecondary }]}>
-                        +{dayEvents.length - 2}
+                        +{dayEvents.length - 1} más
                       </Text>
                     )}
                   </View>
-                ) : null}
+                ) : (
+                  <Text style={[styles.noEventsText, { color: colors.textTertiary }]}>
+                    Sin eventos
+                  </Text>
+                )}
               </TouchableOpacity>
             );
           })}
@@ -721,7 +714,6 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
   },
   viewModeText: {
     fontSize: 14,
@@ -729,6 +721,7 @@ const styles = StyleSheet.create({
   },
   weekViewContainer: {
     paddingHorizontal: 24,
+    paddingVertical: 16,
     marginBottom: 20,
   },
   weekHeader: {
@@ -748,16 +741,16 @@ const styles = StyleSheet.create({
   },
   weekDaysGrid: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   weekDayCard: {
     flex: 1,
     borderRadius: 16,
     borderWidth: 1.5,
-    padding: 10,
+    padding: 12,
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    minHeight: 120,
+    justifyContent: 'center',
+    minHeight: 140,
     position: 'relative',
   },
   weekDayCardToday: {
@@ -766,10 +759,16 @@ const styles = StyleSheet.create({
   weekDayCardSelected: {
     borderWidth: 2,
   },
-  weekDayNumber: {
-    fontSize: 22,
+  weekDayName: {
+    fontSize: 12,
     fontWeight: '600',
+    textTransform: 'uppercase',
     marginBottom: 4,
+  },
+  weekDayNumber: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 8,
   },
   weekDayNumberToday: {
     fontWeight: '700',
@@ -778,21 +777,23 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 8,
     gap: 4,
+    paddingHorizontal: 2,
   },
   weekEventBadge: {
     paddingHorizontal: 6,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 6,
     marginBottom: 2,
   },
   weekEventText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '600',
   },
   weekEventMore: {
     fontSize: 10,
     fontWeight: '600',
     marginTop: 2,
+    textAlign: 'center',
   },
   eventsTitle: {
     fontSize: 14,

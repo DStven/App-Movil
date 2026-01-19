@@ -3,25 +3,26 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Animated,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { initializeDefaultData } from './storage/initAppData';
 
 type PetOption = {
   id: string;
-  emoji: string;
   name: string;
+  image: any;
 };
 
 const PETS: PetOption[] = [
-  { id: 'dog', emoji: '🐶', name: 'Perro' },
-  { id: 'cat', emoji: '🐱', name: 'Gato' },
-  { id: 'chick', emoji: '🐣', name: 'Pollito' },
+  { id: 'dog', name: 'Perro', image: require('../assets/images/pets/dog.png') },
+  { id: 'cat', name: 'Gato', image: require('../assets/images/pets/cat.png') },
+  { id: 'chick', name: 'Pollito', image: require('../assets/images/pets/pullet.png') },
 ];
 
 export default function ChoosePetScreen() {
@@ -95,7 +96,11 @@ export default function ChoosePetScreen() {
                   { transform: [{ scale: animations[pet.id] }] },
                 ]}
               >
-                <Text style={styles.petEmoji}>{pet.emoji}</Text>
+                <Image
+                  source={pet.image}
+                  style={styles.petImage}
+                  resizeMode="contain"
+                />
               </Animated.View>
               <Text style={[styles.petName, dynamicStyles.petName]}>{pet.name}</Text>
               {isSelected && (
@@ -190,8 +195,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  petEmoji: {
-    fontSize: 64,
+  petImage: {
+    width: 80,
+    height: 80,
   },
   petName: {
     fontSize: 18,

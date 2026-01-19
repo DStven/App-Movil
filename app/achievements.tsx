@@ -3,12 +3,13 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
 import { Achievement, getAchievements } from './storage/achievements';
 
@@ -34,7 +35,7 @@ export default function AchievementsScreen() {
   const totalCount = achievements.length;
 
   return (
-    <View style={[styles.container, dynamicStyles.container]}>
+    <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -73,7 +74,7 @@ export default function AchievementsScreen() {
               !achievement.unlocked && styles.achievementLocked,
             ]}
           >
-            <View style={styles.achievementIcon}>
+            <View style={[styles.achievementIcon, dynamicStyles.achievementIcon]}>
               <Text style={styles.emoji}>{achievement.icon}</Text>
               {!achievement.unlocked && (
                 <View style={[styles.lockOverlay, { backgroundColor: colors.overlay }]}>
@@ -100,7 +101,7 @@ export default function AchievementsScreen() {
           </View>
         ))}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -120,6 +121,9 @@ const getDynamicStyles = (colors: any) => StyleSheet.create({
   achievementCard: {
     backgroundColor: colors.card,
     borderColor: colors.border,
+  },
+  achievementIcon: {
+    backgroundColor: colors.surface,
   },
   achievementTitle: {
     color: colors.text,
@@ -141,8 +145,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
   },
   backButton: {
     width: 40,
@@ -157,7 +161,7 @@ const styles = StyleSheet.create({
   },
   progressSection: {
     paddingHorizontal: 24,
-    marginBottom: 24,
+    paddingVertical: 16,
   },
   progressText: {
     fontSize: 14,
@@ -178,6 +182,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
+    paddingTop: 8,
     paddingBottom: 32,
   },
   achievementCard: {
@@ -195,7 +200,6 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -227,5 +231,14 @@ const styles = StyleSheet.create({
   unlockedDate: {
     fontSize: 12,
     marginTop: 4,
+  },
+  viewModeButton: {
+    // Estilos para el botón de vista (ajusta según tus necesidades)
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1,
+    
   },
 });

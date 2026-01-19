@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
 import { getMonthlyStats, getWeeklyStats } from './storage/routineHistory';
 import { getBestStreak, getCurrentStreak } from './storage/streak';
@@ -52,7 +53,7 @@ export default function StatsScreen() {
     Math.max(max, day.routinesCompleted), 0) || 0;
 
   return (
-    <View style={[styles.container, dynamicStyles.container]}>
+    <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -67,22 +68,22 @@ export default function StatsScreen() {
         <View style={[styles.summaryCard, dynamicStyles.summaryCard]}>
           <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Resumen</Text>
           <View style={styles.summaryGrid}>
-            <View style={styles.summaryItem}>
+            <View style={[styles.summaryItem, dynamicStyles.summaryItem]}>
               <Ionicons name="flame" size={24} color={colors.warning} />
               <Text style={[styles.summaryValue, dynamicStyles.summaryValue]}>{currentStreak}</Text>
               <Text style={[styles.summaryLabel, dynamicStyles.summaryLabel]}>Racha actual</Text>
             </View>
-            <View style={styles.summaryItem}>
+            <View style={[styles.summaryItem, dynamicStyles.summaryItem]}>
               <Ionicons name="trophy" size={24} color={colors.secondary} />
               <Text style={[styles.summaryValue, dynamicStyles.summaryValue]}>{bestStreak}</Text>
               <Text style={[styles.summaryLabel, dynamicStyles.summaryLabel]}>Mejor racha</Text>
             </View>
-            <View style={styles.summaryItem}>
+            <View style={[styles.summaryItem, dynamicStyles.summaryItem]}>
               <Ionicons name="flash" size={24} color={colors.accent} />
               <Text style={[styles.summaryValue, dynamicStyles.summaryValue]}>{totalXP}</Text>
               <Text style={[styles.summaryLabel, dynamicStyles.summaryLabel]}>XP total</Text>
             </View>
-            <View style={styles.summaryItem}>
+            <View style={[styles.summaryItem, dynamicStyles.summaryItem]}>
               <Ionicons name="star" size={24} color={colors.primary} />
               <Text style={[styles.summaryValue, dynamicStyles.summaryValue]}>Nivel {level}</Text>
               <Text style={[styles.summaryLabel, dynamicStyles.summaryLabel]}>Nivel actual</Text>
@@ -144,7 +145,7 @@ export default function StatsScreen() {
           <View style={[styles.statsCard, dynamicStyles.statsCard]}>
             <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Este Mes</Text>
             <View style={styles.monthStats}>
-              <View style={styles.monthStatItem}>
+              <View style={[styles.monthStatItem, dynamicStyles.monthStatItem]}>
                 <Text style={[styles.monthStatValue, dynamicStyles.monthStatValue]}>
                   {monthlyStats.routinesCompleted}
                 </Text>
@@ -152,13 +153,13 @@ export default function StatsScreen() {
                   Rutinas completadas
                 </Text>
               </View>
-              <View style={styles.monthStatItem}>
+              <View style={[styles.monthStatItem, dynamicStyles.monthStatItem]}>
                 <Text style={[styles.monthStatValue, dynamicStyles.monthStatValue]}>
                   {monthlyStats.totalXP}
                 </Text>
                 <Text style={[styles.monthStatLabel, dynamicStyles.monthStatLabel]}>XP ganado</Text>
               </View>
-              <View style={styles.monthStatItem}>
+              <View style={[styles.monthStatItem, dynamicStyles.monthStatItem]}>
                 <Text style={[styles.monthStatValue, dynamicStyles.monthStatValue]}>
                   {monthlyStats.averagePerDay.toFixed(1)}
                 </Text>
@@ -170,7 +171,7 @@ export default function StatsScreen() {
           </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -187,6 +188,9 @@ const getDynamicStyles = (colors: any) => StyleSheet.create({
   },
   sectionTitle: {
     color: colors.text,
+  },
+  summaryItem: {
+    backgroundColor: colors.surface,
   },
   summaryValue: {
     color: colors.text,
@@ -213,6 +217,9 @@ const getDynamicStyles = (colors: any) => StyleSheet.create({
   barValue: {
     color: colors.text,
   },
+  monthStatItem: {
+    backgroundColor: colors.surface,
+  },
   monthStatValue: {
     color: colors.text,
   },
@@ -230,8 +237,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
   },
   backButton: {
     width: 40,
@@ -249,6 +256,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
+    paddingTop: 16,
     paddingBottom: 32,
   },
   summaryCard: {
@@ -273,7 +281,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderRadius: 16,
-    backgroundColor: '#f5f5f5',
   },
   summaryValue: {
     fontSize: 24,
@@ -353,7 +360,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderRadius: 16,
-    backgroundColor: '#f5f5f5',
   },
   monthStatValue: {
     fontSize: 24,
