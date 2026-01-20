@@ -4,12 +4,13 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -104,7 +105,17 @@ export default function Profile() {
       {/* Avatar y nivel estático */}
       <View style={[styles.staticAvatarSection, dynamicStyles.staticAvatarSection]}>
         <View style={[styles.avatarCircle, dynamicStyles.avatarCircle]}>
-          <Text style={styles.petAvatar}>{getPetEmoji()}</Text>
+          <Image
+            source={
+              petType === 'dog'
+                ? require('../../assets/images/pets/dog.png')
+                : petType === 'cat'
+                  ? require('../../assets/images/pets/cat.png')
+                  : require('../../assets/images/pets/pullet.png')
+            }
+            style={styles.petImage}
+            resizeMode="contain"
+          />
         </View>
         <View style={styles.levelBadge}>
           <Text style={[styles.levelLabel, dynamicStyles.levelLabel]}>Nivel</Text>
@@ -119,14 +130,14 @@ export default function Profile() {
           <Text style={[styles.xpValue, { color: colors.primary }]}>{xpProgress}%</Text>
         </View>
         <View style={[styles.xpBarContainer, dynamicStyles.xpBarContainer]}>
-          <View 
+          <View
             style={[
-              styles.xpBarFill, 
-              { 
+              styles.xpBarFill,
+              {
                 width: `${xpProgress}%`,
                 backgroundColor: colors.primary,
               }
-            ]} 
+            ]}
           />
         </View>
         <Text style={[styles.xpNext, dynamicStyles.xpNext]}>
@@ -135,7 +146,7 @@ export default function Profile() {
       </View>
 
       {/* Área scrollable - Información del usuario y estadísticas */}
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -147,7 +158,7 @@ export default function Profile() {
               <Ionicons name="person-circle-outline" size={24} color={colors.primary} />
               <Text style={[styles.infoCardTitle, dynamicStyles.infoCardTitle]}>Información</Text>
             </View>
-            
+
             <View style={styles.infoRow}>
               <View style={styles.infoItem}>
                 <Text style={[styles.infoLabel, dynamicStyles.infoLabel]}>Tu nombre</Text>
@@ -378,6 +389,11 @@ const styles = StyleSheet.create({
   petAvatar: {
     fontSize: 56,
   },
+  petImage: {
+    width: 80,
+    height: 80,
+  },
+
   levelBadge: {
     flexDirection: 'row',
     alignItems: 'baseline',

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   Animated,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -91,7 +92,11 @@ export default function OnboardingScreen() {
           <View style={styles.container}>
             {/* Logo/Icono moderno */}
             <View style={[styles.logoContainer, dynamicStyles.logoContainer]}>
-              <Ionicons name="sparkles" size={64} color={colors.primary} />
+              <Image
+                source={require('../assets/images/icons/icon.png')}
+                style={styles.appIcon}
+                resizeMode="cover"
+              />
             </View>
 
             {/* Títulos modernos */}
@@ -225,6 +230,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
+  appIcon: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 30,
+  },
+
   title: {
     fontSize: 32,
     fontWeight: '700',
