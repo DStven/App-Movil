@@ -13,8 +13,6 @@ export type Routine = {
   tasks: Task[];
   completed?: boolean;
   createdAt?: number;
-  isRecurring?: boolean;
-  recurringType?: 'daily' | 'weekly' | null;
   lastCompletedDate?: number;
 };
 

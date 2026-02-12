@@ -4,11 +4,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-  Alert,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -17,8 +17,6 @@ type Routine = {
   title: string;
   tasks?: any[];
   completed?: boolean;
-  isRecurring?: boolean;
-  recurringType?: 'daily' | 'weekly' | null;
 };
 
 export default function RoutinesScreen() {

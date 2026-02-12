@@ -4,13 +4,13 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-  Image,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Image,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -18,7 +18,7 @@ import { getBestStreak, getCurrentStreak } from '../storage/streak';
 import { getLevel, getProgress, getXP } from '../storage/userProgress';
 
 export default function Profile() {
-  const { colors, colorScheme, toggleTheme } = useTheme();
+  const { colors } = useTheme();
   const router = useRouter();
   const [petName, setPetName] = useState<string>('');
   const [userName, setUserName] = useState<string>('');
@@ -83,16 +83,6 @@ export default function Profile() {
       <View style={[styles.staticHeader, dynamicStyles.staticHeader]}>
         <Text style={[styles.title, dynamicStyles.title]}>Perfil</Text>
         <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={[styles.iconButton, dynamicStyles.iconButton]}
-            onPress={toggleTheme}
-          >
-            <Ionicons
-              name={colorScheme === 'dark' ? 'sunny' : 'moon'}
-              size={22}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.iconButton, dynamicStyles.iconButton]}
             onPress={() => router.push('/settings')}
@@ -207,16 +197,7 @@ export default function Profile() {
               <Text style={[styles.statLabel, dynamicStyles.statLabel]}>XP total</Text>
             </View>
 
-            <TouchableOpacity
-              style={[styles.statCard, dynamicStyles.statCard]}
-              onPress={() => router.push('/calendar')}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.statIconContainer, { backgroundColor: colors.primary + '15' }]}>
-                <Ionicons name="calendar-outline" size={24} color={colors.primary} />
-              </View>
-              <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Calendario</Text>
-            </TouchableOpacity>
+            {/* Calendario eliminado */}
 
             <TouchableOpacity
               style={[styles.statCard, dynamicStyles.statCard]}
@@ -253,20 +234,7 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* Backup y Restauración */}
-        <View style={styles.backupSection}>
-          <TouchableOpacity
-            style={[styles.backupButton, dynamicStyles.backupButton]}
-            onPress={() => router.push('/backup')}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="cloud-download-outline" size={20} color={colors.primary} />
-            <Text style={[styles.backupButtonText, { color: colors.primary }]}>
-              Backup y Restauración
-            </Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-          </TouchableOpacity>
-        </View>
+        {/* Backup eliminado */}
       </ScrollView>
     </SafeAreaView>
   );
@@ -518,21 +486,5 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
-  backupSection: {
-    paddingHorizontal: 24,
-    marginTop: 8,
-  },
-  backupButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-    gap: 12,
-  },
-  backupButtonText: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  
 });

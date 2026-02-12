@@ -4,15 +4,15 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
-  Image,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Easing,
+    Image,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -34,8 +34,6 @@ type Routine = {
   tasks: Task[];
   completed?: boolean;
   createdAt?: number;
-  isRecurring?: boolean;
-  recurringType?: 'daily' | 'weekly' | null;
   lastCompletedDate?: number;
 };
 
@@ -203,59 +201,7 @@ export default function HomeScreen() {
           console.log('Logros desbloqueados:', unlockedAchievements);
         }
 
-        // Si es una rutina recurrente, verificar si debe resetearse
-        if (updatedRoutine.isRecurring) {
-          const now = new Date();
-          const lastCompleted = updatedRoutine.lastCompletedDate
-            ? new Date(updatedRoutine.lastCompletedDate)
-            : null;
-
-          let shouldReset = false;
-
-          if (updatedRoutine.recurringType === 'daily') {
-            // Resetear si pasó un día
-            if (!lastCompleted || now.toDateString() !== lastCompleted.toDateString()) {
-              shouldReset = true;
-            }
-          } else if (updatedRoutine.recurringType === 'weekly') {
-            // Resetear si pasó una semana
-            if (!lastCompleted) {
-              shouldReset = true;
-            } else {
-              const daysDiff = Math.floor((now.getTime() - lastCompleted.getTime()) / (1000 * 60 * 60 * 24));
-              if (daysDiff >= 7) {
-                shouldReset = true;
-              }
-            }
-          }
-
-          if (shouldReset) {
-            const resetRoutine: Routine = {
-              ...updatedRoutine,
-              completed: false,
-              tasks: updatedRoutine.tasks.map(t => ({ ...t, done: false })),
-              lastCompletedDate: Date.now(),
-            };
-            const updatedRoutinesWithReset = routines.map((r: Routine) =>
-              r.id === resetRoutine.id ? resetRoutine : r
-            );
-            await AsyncStorage.setItem('routines', JSON.stringify(updatedRoutinesWithReset));
-            setRoutine(resetRoutine);
-            setAllRoutines(updatedRoutinesWithReset);
-          } else {
-            // Actualizar lastCompletedDate
-            const updatedRoutineWithDate: Routine = {
-              ...updatedRoutine,
-              lastCompletedDate: Date.now(),
-            };
-            const updatedRoutinesWithDate = routines.map((r: Routine) =>
-              r.id === updatedRoutineWithDate.id ? updatedRoutineWithDate : r
-            );
-            await AsyncStorage.setItem('routines', JSON.stringify(updatedRoutinesWithDate));
-            setRoutine(updatedRoutineWithDate);
-            setAllRoutines(updatedRoutinesWithDate);
-          }
-        }
+        // Recurrencia eliminada: no se realiza reset automático
       }
     }
   };
