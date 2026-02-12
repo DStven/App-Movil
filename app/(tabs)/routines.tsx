@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
   Alert,
@@ -283,7 +283,8 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 28,
-    paddingTop: 24,
+    paddingTop: 48,
+    paddingHorizontal: 24,
   },
   title: {
     fontSize: 32,

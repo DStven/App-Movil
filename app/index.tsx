@@ -4,16 +4,17 @@ import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   Animated,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   TouchableWithoutFeedback,
-  View,
+  View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
 
 export default function OnboardingScreen() {
@@ -81,97 +82,106 @@ export default function OnboardingScreen() {
   const dynamicStyles = getDynamicStyles(colors);
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.root, dynamicStyles.root]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={styles.container}>
-        {/* Logo/Icono moderno */}
-        <View style={[styles.logoContainer, dynamicStyles.logoContainer]}>
-          <Ionicons name="sparkles" size={64} color={colors.primary} />
-        </View>
+    <SafeAreaView style={[styles.root, dynamicStyles.root]} edges={['top']}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.container}>
+            {/* Logo/Icono moderno */}
+            <View style={[styles.logoContainer, dynamicStyles.logoContainer]}>
+              <Image
+                source={require('../assets/images/icons/icon.png')}
+                style={styles.appIcon}
+                resizeMode="cover"
+              />
+            </View>
 
-        {/* Títulos modernos */}
-        <Text style={[styles.title, dynamicStyles.title]}>¡Bienvenido!</Text>
-        <Text style={[styles.subtitle, dynamicStyles.subtitle]}>
-          Comencemos configurando tu perfil
-        </Text>
+            {/* Títulos modernos */}
+            <Text style={[styles.title, dynamicStyles.title]}>¡Bienvenido!</Text>
+            <Text style={[styles.subtitle, dynamicStyles.subtitle]}>
+              Comencemos configurando tu perfil
+            </Text>
 
-        {/* Input Mascota */}
-        <View style={styles.inputSection}>
-          <Text style={[styles.label, dynamicStyles.label]}>Nombre de tu mascota</Text>
-        <Animated.View style={{ transform: [{ scale: petAnim }] }}>
-            <View style={[styles.inputWrapper, dynamicStyles.inputWrapper]}>
-              <Ionicons name="paw" size={20} color={colors.textSecondary} style={styles.inputIcon} />
-            <TextInput
-                style={[styles.input, dynamicStyles.input]}
-              placeholder="Ej: Rocky"
-                placeholderTextColor={colors.textTertiary}
-              value={petName}
-              onChangeText={setPetName}
-              returnKeyType="next"
-              blurOnSubmit={false}
-              onFocus={() => focusInput(petAnim)}
-              onBlur={() => blurInput(petAnim)}
-              onSubmitEditing={() => userInputRef.current?.focus()}
-            />
-              {isPetValid && (
-                <View style={[styles.checkIcon, { backgroundColor: colors.success + '20' }]}>
-                  <Ionicons name="checkmark" size={16} color={colors.success} />
+            {/* Input Mascota */}
+            <View style={styles.inputSection}>
+              <Text style={[styles.label, dynamicStyles.label]}>Nombre de tu mascota</Text>
+              <Animated.View style={{ transform: [{ scale: petAnim }] }}>
+                <View style={[styles.inputWrapper, dynamicStyles.inputWrapper]}>
+                  <Ionicons name="paw" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.input, dynamicStyles.input]}
+                    placeholder="Ej: Rocky"
+                    placeholderTextColor={colors.textTertiary}
+                    value={petName}
+                    onChangeText={setPetName}
+                    returnKeyType="next"
+                    blurOnSubmit={false}
+                    onFocus={() => focusInput(petAnim)}
+                    onBlur={() => blurInput(petAnim)}
+                    onSubmitEditing={() => userInputRef.current?.focus()}
+                  />
+                  {isPetValid && (
+                    <View style={[styles.checkIcon, { backgroundColor: colors.success + '20' }]}>
+                      <Ionicons name="checkmark" size={16} color={colors.success} />
+                    </View>
+                  )}
                 </View>
-              )}
-          </View>
-        </Animated.View>
-        </View>
+              </Animated.View>
+            </View>
 
-        {/* Input Usuario */}
-        <View style={styles.inputSection}>
-          <Text style={[styles.label, dynamicStyles.label]}>Tu nombre</Text>
-        <Animated.View style={{ transform: [{ scale: userAnim }] }}>
-            <View style={[styles.inputWrapper, dynamicStyles.inputWrapper]}>
-              <Ionicons name="person" size={20} color={colors.textSecondary} style={styles.inputIcon} />
-            <TextInput
-              ref={userInputRef}
-                style={[styles.input, dynamicStyles.input]}
-              placeholder="Ej: Steven"
-                placeholderTextColor={colors.textTertiary}
-              value={userName}
-              onChangeText={setUserName}
-              returnKeyType="done"
-              onFocus={() => focusInput(userAnim)}
-              onBlur={() => blurInput(userAnim)}
-              onSubmitEditing={Keyboard.dismiss}
-            />
-              {isUserValid && (
-                <View style={[styles.checkIcon, { backgroundColor: colors.success + '20' }]}>
-                  <Ionicons name="checkmark" size={16} color={colors.success} />
+            {/* Input Usuario */}
+            <View style={styles.inputSection}>
+              <Text style={[styles.label, dynamicStyles.label]}>Tu nombre</Text>
+              <Animated.View style={{ transform: [{ scale: userAnim }] }}>
+                <View style={[styles.inputWrapper, dynamicStyles.inputWrapper]}>
+                  <Ionicons name="person" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                  <TextInput
+                    ref={userInputRef}
+                    style={[styles.input, dynamicStyles.input]}
+                    placeholder="Ej: Steven"
+                    placeholderTextColor={colors.textTertiary}
+                    value={userName}
+                    onChangeText={setUserName}
+                    returnKeyType="done"
+                    onFocus={() => focusInput(userAnim)}
+                    onBlur={() => blurInput(userAnim)}
+                    onSubmitEditing={Keyboard.dismiss}
+                  />
+                  {isUserValid && (
+                    <View style={[styles.checkIcon, { backgroundColor: colors.success + '20' }]}>
+                      <Ionicons name="checkmark" size={16} color={colors.success} />
+                    </View>
+                  )}
                 </View>
-              )}
-          </View>
-        </Animated.View>
-        </View>
+              </Animated.View>
+            </View>
 
-        {/* Botón continuar */}
-        <TouchableWithoutFeedback
-          disabled={!isFormValid}
-          onPressIn={pressInButton}
-          onPressOut={pressOutButton}
-          onPress={handleContinue}
-        >
-          <Animated.View
-            style={[
-              styles.mainButton,
-              { backgroundColor: colors.primary },
-              !isFormValid && styles.mainButtonDisabled,
-              { transform: [{ scale: buttonAnim }] },
-            ]}
-          >
-            <Text style={styles.mainButtonText}>Continuar</Text>
-            <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
-          </Animated.View>
+            {/* Botón continuar */}
+            <TouchableWithoutFeedback
+              disabled={!isFormValid}
+              onPressIn={pressInButton}
+              onPressOut={pressOutButton}
+              onPress={handleContinue}
+            >
+              <Animated.View
+                style={[
+                  styles.mainButton,
+                  { backgroundColor: colors.primary },
+                  !isFormValid && styles.mainButtonDisabled,
+                  { transform: [{ scale: buttonAnim }] },
+                ]}
+              >
+                <Text style={styles.mainButtonText}>Continuar</Text>
+                <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
+              </Animated.View>
+            </TouchableWithoutFeedback>
+          </View>
         </TouchableWithoutFeedback>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -207,8 +217,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 80,
+    paddingTop: 20,
     paddingBottom: 40,
+    justifyContent: 'center',
   },
   logoContainer: {
     width: 120,
@@ -219,6 +230,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
+  appIcon: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 30,
+  },
+
   title: {
     fontSize: 32,
     fontWeight: '700',
@@ -266,7 +284,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mainButton: {
-    marginTop: 20,
+    marginTop: 40,
     height: 56,
     borderRadius: 16,
     flexDirection: 'row',

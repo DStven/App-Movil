@@ -3,26 +3,30 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-    FlatList,
-    Platform,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
 import { Note, deleteNote, getNotes } from './storage/notes';
 
 /**
- * Pantalla principal de notas
- * Muestra una lista de todas las notas guardadas
+ * Pantalla de notas con búsqueda y filtrado
  */
 export default function NotesScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const [notes, setNotes] = useState<Note[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'recent' | 'oldest' | 'title'>('recent');
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
   // Recargar notas cuando se vuelve a la pantalla
   useFocusEffect(
@@ -54,11 +58,53 @@ export default function NotesScreen() {
     return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
   };
 
+  // Filtrar y buscar notas
+  const filteredNotes = notes
+    .filter((note) => {
+      // Filtro por color
+      if (selectedColor && note.color !== selectedColor) {
+        return false;
+      }
+
+      // Búsqueda por título y contenido
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        return (
+          (note.title && note.title.toLowerCase().includes(query)) ||
+          (note.content && note.content.toLowerCase().includes(query))
+        );
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'recent') {
+        return b.updatedAt - a.updatedAt;
+      } else if (sortBy === 'oldest') {
+        return a.updatedAt - b.updatedAt;
+      } else if (sortBy === 'title') {
+        return (a.title || '').localeCompare(b.title || '');
+      }
+      return 0;
+    });
+
+  // Colores disponibles para filtrar
+  const colorOptions = [
+    { name: 'Todos', value: null, icon: 'layers-outline' },
+    { name: 'Indigo', value: '#6366f1', icon: 'square-sharp' },
+    { name: 'Púrpura', value: '#8b5cf6', icon: 'square-sharp' },
+    { name: 'Cian', value: '#06b6d4', icon: 'square-sharp' },
+    { name: 'Verde', value: '#10b981', icon: 'square-sharp' },
+    { name: 'Ámbar', value: '#f59e0b', icon: 'square-sharp' },
+    { name: 'Rojo', value: '#ef4444', icon: 'square-sharp' },
+  ];
+
   const dynamicStyles = getDynamicStyles(colors);
 
   return (
     <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
       <StatusBar barStyle={colors.background === '#ffffff' ? 'dark-content' : 'light-content'} />
+      
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -74,18 +120,143 @@ export default function NotesScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Barra de búsqueda */}
+      <View style={[styles.searchSection, { borderBottomColor: colors.border }]}>
+        <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="search" size={20} color={colors.textSecondary} />
+          <TextInput
+            style={[styles.searchInput, dynamicStyles.searchInput]}
+            placeholder="Buscar notas..."
+            placeholderTextColor={colors.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setSearchQuery('')}
+              style={styles.clearButton}
+            >
+              <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Botones de ordenamiento y filtrado */}
+        <View style={styles.controlsRow}>
+          <TouchableOpacity
+            style={[styles.sortButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => setShowSortMenu(!showSortMenu)}
+          >
+            <Ionicons name="swap-vertical" size={18} color={colors.primary} />
+            <Text style={[styles.sortButtonText, { color: colors.primary }]}>Ordenar</Text>
+          </TouchableOpacity>
+
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.colorFilters}
+          >
+            {colorOptions.map((option) => (
+              <TouchableOpacity
+                key={option.value || 'all'}
+                style={[
+                  styles.colorFilter,
+                  option.value 
+                    ? { backgroundColor: option.value, borderColor: option.value }
+                    : [{ backgroundColor: colors.surface, borderColor: colors.border }],
+                  selectedColor === option.value && [
+                    styles.colorFilterActive,
+                    { borderColor: colors.text, borderWidth: 2.5 }
+                  ],
+                ]}
+                onPress={() => setSelectedColor(option.value)}
+                activeOpacity={0.7}
+              >
+                {option.value === null ? (
+                  <Ionicons name={option.icon} size={16} color={colors.textSecondary} />
+                ) : selectedColor === option.value ? (
+                  <Ionicons name="checkmark" size={14} color="#fff" />
+                ) : null}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Menú de ordenamiento */}
+        {showSortMenu && (
+          <View style={[styles.sortMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {[
+              { label: 'Más recientes', value: 'recent' },
+              { label: 'Más antiguos', value: 'oldest' },
+              { label: 'Título A-Z', value: 'title' },
+            ].map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.sortOption,
+                  sortBy === option.value && [styles.sortOptionActive, { backgroundColor: colors.primary + '20' }],
+                ]}
+                onPress={() => {
+                  setSortBy(option.value as any);
+                  setShowSortMenu(false);
+                }}
+              >
+                {sortBy === option.value && (
+                  <Ionicons name="checkmark" size={18} color={colors.primary} style={{ marginRight: 8 }} />
+                )}
+                <Text style={[
+                  styles.sortOptionText,
+                  dynamicStyles.sortOptionText,
+                  sortBy === option.value && { color: colors.primary, fontWeight: '600' },
+                ]}>
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
+
+      {/* Información de búsqueda */}
+      {(searchQuery.length > 0 || selectedColor) && (
+        <View style={[styles.filterInfo, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.filterInfoText, dynamicStyles.filterInfoText]}>
+            {filteredNotes.length} {filteredNotes.length === 1 ? 'resultado' : 'resultados'}
+          </Text>
+          {(searchQuery.length > 0 || selectedColor) && (
+            <TouchableOpacity
+              onPress={() => {
+                setSearchQuery('');
+                setSelectedColor(null);
+              }}
+              style={[styles.clearFiltersButton, { borderColor: colors.border }]}
+            >
+              <Text style={[styles.clearFiltersText, { color: colors.primary }]}>Limpiar filtros</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       {/* Lista de notas */}
-      {notes.length === 0 ? (
+      {filteredNotes.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="document-text-outline" size={64} color={colors.border} />
-          <Text style={[styles.emptyText, dynamicStyles.emptyText]}>No tienes notas aún</Text>
+          <Ionicons 
+            name={searchQuery.length > 0 ? 'search-outline' : 'document-text-outline'} 
+            size={64} 
+            color={colors.border} 
+          />
+          <Text style={[styles.emptyText, dynamicStyles.emptyText]}>
+            {searchQuery.length > 0 ? 'No hay resultados' : 'No tienes notas aún'}
+          </Text>
           <Text style={[styles.emptySubtext, dynamicStyles.emptySubtext]}>
-            Crea tu primera nota para comenzar
+            {searchQuery.length > 0 
+              ? 'Intenta con otras palabras clave'
+              : 'Crea tu primera nota para comenzar'}
           </Text>
         </View>
       ) : (
         <FlatList
-          data={notes}
+          data={filteredNotes}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.notesList}
           renderItem={({ item }) => (
@@ -136,6 +307,9 @@ const getDynamicStyles = (colors: any) => StyleSheet.create({
   title: {
     color: colors.text,
   },
+  searchInput: {
+    color: colors.text,
+  },
   emptyText: {
     color: colors.textSecondary,
   },
@@ -155,6 +329,12 @@ const getDynamicStyles = (colors: any) => StyleSheet.create({
   noteDate: {
     color: colors.textTertiary,
   },
+  sortOptionText: {
+    color: colors.text,
+  },
+  filterInfoText: {
+    color: colors.text,
+  },
 });
 
 const styles = StyleSheet.create({
@@ -166,9 +346,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'ios' ? 8 : 16,
-    paddingBottom: 20,
-    minHeight: 60,
+    paddingTop: 12,
+    paddingBottom: 16,
+    minHeight: 56,
   },
   backButton: {
     width: 40,
@@ -188,8 +368,123 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  
+  // Búsqueda
+  searchSection: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    gap: 12,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    height: 44,
+    borderWidth: 1,
+    gap: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  clearButton: {
+    padding: 4,
+  },
+  
+  // Controles (ordenar y filtros)
+  controlsRow: {
+    gap: 12,
+  },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    gap: 6,
+    marginBottom: 8,
+  },
+  sortButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  
+  // Menú de ordenamiento
+  sortMenu: {
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  sortOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+  },
+  sortOptionActive: {
+    borderRadius: 0,
+  },
+  sortOptionText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  
+  // Filtros de color
+  colorFilters: {
+    gap: 8,
+    paddingBottom: 8,
+  },
+  colorFilter: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+  },
+  colorFilterActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  
+  // Información de filtrado
+  filterInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  filterInfoText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  clearFiltersButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  clearFiltersText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  
+  // Lista de notas
   notesList: {
     paddingHorizontal: 24,
+    paddingTop: 16,
     paddingBottom: 24,
   },
   noteCard: {
@@ -238,6 +533,8 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 4,
   },
+  
+  // Estado vacío
   emptyState: {
     flex: 1,
     justifyContent: 'center',
