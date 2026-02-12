@@ -3,12 +3,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  Animated,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { initializeDefaultData } from './storage/initAppData';
@@ -75,12 +76,15 @@ export default function ChoosePetScreen() {
       </View>
 
       {/* Opciones de mascotas */}
-      <View style={styles.petsContainer}>
-        {PETS.map((pet) => {
+      <FlatList
+        data={PETS}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.petsContent}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item: pet }) => {
           const isSelected = selectedPet === pet.id;
           return (
             <TouchableOpacity
-              key={pet.id}
               style={[
                 styles.petCard,
                 dynamicStyles.petCard,
@@ -110,8 +114,8 @@ export default function ChoosePetScreen() {
               )}
             </TouchableOpacity>
           );
-        })}
-      </View>
+        }}
+      />
 
       {/* Botón continuar */}
       <TouchableOpacity
@@ -176,6 +180,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     gap: 20,
+  },
+  petsContent: {
+    justifyContent: 'center',
+    paddingVertical: 12,
   },
   petCard: {
     borderRadius: 24,

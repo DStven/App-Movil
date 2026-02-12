@@ -3,16 +3,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
-  Animated,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View
+    Animated,
+    Image,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
@@ -20,6 +20,7 @@ import { useTheme } from '../contexts/ThemeContext';
 export default function OnboardingScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+  const [iconLoadError, setIconLoadError] = useState(false);
 
   const [petName, setPetName] = useState('');
   const [userName, setUserName] = useState('');
@@ -92,11 +93,18 @@ export default function OnboardingScreen() {
           <View style={styles.container}>
             {/* Logo/Icono moderno */}
             <View style={[styles.logoContainer, dynamicStyles.logoContainer]}>
-              <Image
-                source={require('../assets/images/icons/icon.png')}
-                style={styles.appIcon}
-                resizeMode="cover"
-              />
+              {!iconLoadError ? (
+                <Image
+                  source={require('../assets/images/icons/icon.png')}
+                  style={styles.appIcon}
+                  resizeMode="contain"
+                  onError={() => setIconLoadError(true)}
+                />
+              ) : (
+                <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 48 }}>🐣</Text>
+                </View>
+              )}
             </View>
 
             {/* Títulos modernos */}

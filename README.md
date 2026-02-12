@@ -8,7 +8,6 @@ Una aplicación moderna y elegante para gestionar tus rutinas diarias, con siste
 - Crear, editar y eliminar rutinas personalizadas
 - Agregar y reordenar tareas dentro de cada rutina
 - Sistema de puntos XP por cada tarea completada
-- Rutinas recurrentes (diarias o semanales)
 - Duplicar rutinas existentes
 - Plantillas predefinidas para crear rutinas rápidamente
 
@@ -23,26 +22,18 @@ Una aplicación moderna y elegante para gestionar tus rutinas diarias, con siste
 - Seguimiento de rachas (current y best streak)
 - Historial de rutinas completadas
 
-### 📅 Calendario
-- Vista mensual y semanal
-- Agregar eventos a fechas específicas
-- Visualización clara de días con eventos
-
 ### 📝 Notas
 - Crear y gestionar notas personalizadas
 - Colores personalizables
 - Sistema de notas fijadas (pinned)
 - Buscar y organizar notas
 
-### 🌓 Tema Oscuro/Claro
-- Soporte completo para modo claro y oscuro
-- Persistencia de preferencia del usuario
-- Diseño consistente en ambos modos
+### 🌓 Tema
+- Tema claro por defecto (modo oscuro deshabilitado)
+- Diseño consistente en el tema
 
 ### 💾 Backup y Restauración
-- Crear backups de todos tus datos
-- Restaurar desde archivos JSON
-- Exportar datos para análisis externo
+Actualmente deshabilitado en esta versión.
 
 
 ## 📁 Estructura del Proyecto
@@ -54,13 +45,11 @@ rutina_App/
 │   │   ├── home.tsx         # Pantalla principal - Muestra rutina activa
 │   │   ├── routines.tsx     # Lista de todas las rutinas
 │   │   └── profile.tsx      # Perfil del usuario
-│   ├── calendar.tsx         # Calendario y eventos
 │   ├── notes.tsx            # Lista de notas
 │   ├── edit-note.tsx        # Crear/editar nota
 │   ├── edit-routine.tsx     # Crear/editar rutina
 │   ├── achievements.tsx     # Pantalla de logros
 │   ├── stats.tsx            # Estadísticas detalladas
-│   ├── backup.tsx           # Backup y restauración
 │   ├── settings.tsx         # Configuración de la app
 │   ├── routine-templates.tsx # Plantillas de rutinas
 │   ├── choose-pet.tsx       # Selección de mascota
@@ -73,9 +62,12 @@ rutina_App/
 │   ├── streak.ts            # Sistema de rachas
 │   └── userProgress.ts      # Progreso y XP del usuario
 ├── utils/                   # Utilidades
-│   └── backup.ts            # Funciones de backup/restore
 ├── contexts/                # Contextos de React
 │   └── ThemeContext.tsx     # Contexto de tema (claro/oscuro)
+    ├── utils/                   # Utilidades
+        
+    ├── contexts/                # Contextos de React
+    │   └── ThemeContext.tsx     # Contexto de tema (claro)
 └── constants/               # Constantes
     └── theme.ts             # Colores y estilos del tema
 ```

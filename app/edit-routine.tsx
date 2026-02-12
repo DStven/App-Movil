@@ -3,21 +3,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  Extrapolate,
-  interpolate,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring
+    Extrapolate,
+    interpolate,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
@@ -34,8 +34,6 @@ type Routine = {
   title: string;
   tasks: Task[];
   createdAt?: number;
-  isRecurring?: boolean;
-  recurringType?: 'daily' | 'weekly' | null;
   lastCompletedDate?: number;
 };
 
@@ -44,8 +42,6 @@ export default function EditRoutineScreen() {
   const [routine, setRoutine] = useState<Routine | null>(null);
   const [routineTitle, setRoutineTitle] = useState('');
   const [newTask, setNewTask] = useState('');
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [recurringType, setRecurringType] = useState<'daily' | 'weekly' | null>(null);
   const [isNewAndUnchanged, setIsNewAndUnchanged] = useState(true);
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
   const router = useRouter();
@@ -63,10 +59,6 @@ export default function EditRoutineScreen() {
     if (id) {
       routineToEdit = routines.find(r => r.id === id);
       setIsNewAndUnchanged(false);
-      if (routineToEdit) {
-        setIsRecurring(routineToEdit.isRecurring || false);
-        setRecurringType(routineToEdit.recurringType || null);
-      }
     } else {
       const now = Date.now();
       const newRoutine: Routine = {
@@ -179,8 +171,6 @@ export default function EditRoutineScreen() {
     const updatedRoutine = {
       ...routine,
       title: titleTrimmed,
-      isRecurring,
-      recurringType: isRecurring ? recurringType : null,
     };
     
     await saveRoutine(updatedRoutine);
@@ -231,57 +221,7 @@ export default function EditRoutineScreen() {
           placeholderTextColor={colors.textTertiary}
         />
 
-        {/* Opciones de recurrencia */}
-        <View style={[styles.recurringSection, dynamicStyles.recurringSection]}>
-          <View style={styles.recurringHeader}>
-            <Ionicons name="repeat" size={20} color={colors.primary} />
-            <Text style={[styles.recurringLabel, dynamicStyles.recurringLabel]}>Rutina recurrente</Text>
-          </View>
-          <TouchableOpacity
-            style={[
-              styles.toggleButton,
-              isRecurring 
-                ? { backgroundColor: colors.primary } 
-                : { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }
-            ]}
-            onPress={() => {
-              setIsRecurring(!isRecurring);
-              if (isRecurring) setRecurringType(null);
-            }}
-          >
-            <Text style={[styles.toggleText, { color: isRecurring ? '#fff' : colors.text }]}>
-              {isRecurring ? 'Activada' : 'Desactivada'}
-            </Text>
-          </TouchableOpacity>
-          {isRecurring && (
-            <View style={styles.recurringOptions}>
-              <TouchableOpacity
-                style={[
-                  styles.recurringOption,
-                  dynamicStyles.recurringOption,
-                  recurringType === 'daily' && { backgroundColor: colors.primary + '20', borderColor: colors.primary },
-                ]}
-                onPress={() => setRecurringType('daily')}
-              >
-                <Text style={[styles.recurringOptionText, { color: recurringType === 'daily' ? colors.primary : colors.text }]}>
-                  Diaria
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.recurringOption,
-                  dynamicStyles.recurringOption,
-                  recurringType === 'weekly' && { backgroundColor: colors.primary + '20', borderColor: colors.primary },
-                ]}
-                onPress={() => setRecurringType('weekly')}
-              >
-                <Text style={[styles.recurringOptionText, { color: recurringType === 'weekly' ? colors.primary : colors.text }]}>
-                  Semanal
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+        {/* Recurrencia eliminada */}
 
         {/* Nueva tarea */}
         <View style={styles.addTask}>
