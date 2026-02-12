@@ -207,7 +207,7 @@ export default function Profile() {
               <Text style={[styles.statLabel, dynamicStyles.statLabel]}>XP total</Text>
             </View>
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={[styles.statCard, dynamicStyles.statCard]}
               onPress={() => router.push('/calendar')}
               activeOpacity={0.7}
@@ -216,7 +216,7 @@ export default function Profile() {
                 <Ionicons name="calendar-outline" size={24} color={colors.primary} />
               </View>
               <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Calendario</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             <TouchableOpacity
               style={[styles.statCard, dynamicStyles.statCard]}
