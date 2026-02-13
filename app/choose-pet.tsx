@@ -3,13 +3,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Animated,
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { initializeDefaultData } from './storage/initAppData';
@@ -184,6 +184,7 @@ const styles = StyleSheet.create({
   petsContent: {
     justifyContent: 'center',
     paddingVertical: 12,
+    gap: 16,
   },
   petCard: {
     borderRadius: 24,
