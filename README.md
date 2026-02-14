@@ -72,22 +72,57 @@ rutina_App/
     └── theme.ts             # Colores y estilos del tema
 ```
 
+## � Requisitos Previos
+
+- **Node.js** v18 o superior
+- **npm** o **yarn**
+- **Expo CLI** (se instala automáticamente con las dependencias)
+- Un teléfono con la app **Expo Go** para probar en dispositivo, o un emulador
+
 ## 🚀 Instalación
 
 ```bash
 # Instalar dependencias
 npm install
 
-# Iniciar el servidor de desarrollo
-npm start
+# Iniciar el servidor de desarrollo con Expo
+npx expo start
+```
+
+### Comandos Disponibles
+
+```bash
+# Iniciar en modo desarrollo interactivo
+npx expo start
+
+# Abrir en iOS (requiere macOS)
+npx expo start --ios
+
+# Abrir en Android (requiere Android Studio/emulador)
+npx expo start --android
+
+# Abrir en navegador web
+npx expo start --web
+
+# Limpiar caché y reiniciar
+npx expo start --clear
+
+# Build para producción (iOS y Android)
+npx eas build
+
+# Preview de la build en dispositivo
+npx eas build --platform android --profile preview
+npx eas build --platform ios --profile preview
 ```
 
 ## 📱 Tecnologías Utilizadas
 
-- **React Native** - Framework principal
-- **Expo Router** - Navegación entre pantallas
-- **AsyncStorage** - Almacenamiento local persistente
-- **TypeScript** - Tipado estático
+- **Expo** - Plataforma de desarrollo para React Native
+- **React Native** - Framework principal para aplicaciones móviles
+- **Expo Router** - Navegación entre pantallas con soporte de deep linking
+- **AsyncStorage** - Almacenamiento local persistente de datos
+- **TypeScript** - Tipado estático para mayor seguridad
+- **React Context** - Gestión de estado global (tema)
 
 ## 🎨 Características de Diseño
 
