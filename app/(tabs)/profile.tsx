@@ -197,21 +197,6 @@ export default function Profile() {
               <Text style={[styles.statLabel, dynamicStyles.statLabel]}>XP total</Text>
             </View>
 
-<<<<<<< HEAD
-            {/* Calendario eliminado */}
-=======
-            {/* <TouchableOpacity
-              style={[styles.statCard, dynamicStyles.statCard]}
-              onPress={() => router.push('/calendar')}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.statIconContainer, { backgroundColor: colors.primary + '15' }]}>
-                <Ionicons name="calendar-outline" size={24} color={colors.primary} />
-              </View>
-              <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Calendario</Text>
-            </TouchableOpacity> */}
->>>>>>> 6e20be6717f1d28f6f0e9cc3bd858243626aa5d3
-
             <TouchableOpacity
               style={[styles.statCard, dynamicStyles.statCard]}
               onPress={() => router.push('/stats')}
