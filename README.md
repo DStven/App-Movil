@@ -72,7 +72,7 @@ rutina_App/
     └── theme.ts             # Colores y estilos del tema
 ```
 
-## � Requisitos Previos
+## 📋 Requisitos Previos
 
 - **Node.js** v18 o superior
 - **npm** o **yarn**
